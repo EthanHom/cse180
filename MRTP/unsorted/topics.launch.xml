@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="demo_nodes_cpp" exec="talker" name="talkerA" />
+  <node pkg="demo_nodes_cpp" exec="talker" name="talkerB" />
+  <node pkg="demo_nodes_cpp" exec="listener"  />
+</launch>
