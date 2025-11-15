@@ -1,0 +1,32 @@
+Git notes, uses example cse162 folder
+
+Initial Setup
+    New repository
+    Name it and do not check "Add a README", ".gitignore", and "license"
+
+    commands with notes:
+        1. cd to folder (ex. cd path/to/cse162)
+        2. git init (initialize git inside folder)
+        3. git branch -M main (Rename the branch to main (standard practice))
+        4. git add . (use . for all files)
+        5. git commit -m "Initial commit"
+        6. git remote add origin https://github.com/YourUsername/cse162.git
+        7. git push -u origin main
+
+    commands without notes: 
+        cd path/to/cse162
+        git init 
+        git branch -M main 
+        git add .
+        git commit -m "Initial commit"
+        git remote add origin https://github.com/YourUsername/cse162.git
+        git push -u origin main
+
+
+
+
+To Push New Edits
+    cd path/to/cse162
+    git add .
+    git commit -m "Completed lab 1"
+    git push
