@@ -109,6 +109,9 @@ private:
   // Human footprints in the original map (approximate coordinates)
   HumanFootprint human1_{1.04,  -0.974, 0.8, 0};
   HumanFootprint human2_{-12.0, 15.20, 0.8, 0};
+  // other approximate coordinates:
+  // human 1: 1.06, -1
+  // human 2: -12, 15.2
   const int human_seen_threshold_ = 40;  // number of laser points to consider "seen"
 
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
