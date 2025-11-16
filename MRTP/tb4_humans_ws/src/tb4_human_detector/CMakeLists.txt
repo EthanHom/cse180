@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(human_detector)
+project(tb4_human_detector)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,22 +7,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
+
+# find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(navigation REQUIRED)
 
-# Include directories
-include_directories(include)
+add_executable(human_detector_node
+  src/human_detector.cpp)
 
-# Add library
-add_library(detector_logic src/detector_logic.cpp)
-ament_target_dependencies(detector_logic
+ament_target_dependencies(human_detector_node
   rclcpp
   sensor_msgs
   nav_msgs
@@ -30,39 +33,14 @@ ament_target_dependencies(detector_logic
   tf2
   tf2_ros
   tf2_geometry_msgs
-)
-
-# Add executable
-add_executable(human_detection_node src/human_detection_node.cpp)
-target_link_libraries(human_detection_node detector_logic)
-ament_target_dependencies(human_detection_node
-  rclcpp
-  sensor_msgs
-  nav_msgs
-  geometry_msgs
-  std_msgs
   nav2_msgs
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
-)
-
-# Install
-install(TARGETS
-  detector_logic
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
+  navigation)
 
 install(TARGETS
-  human_detection_node
-  DESTINATION lib/${PROJECT_NAME}
-)
+  human_detector_node
+  DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY include/
-  DESTINATION include/
-)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
