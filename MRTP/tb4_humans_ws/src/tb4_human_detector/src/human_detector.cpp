@@ -161,9 +161,6 @@ public:
             return;
         }
 
-        // ================================================================
-        // Score-based candidate selection
-        // ================================================================
         RCLCPP_INFO(this->get_logger(), "------------------------------------------");
         RCLCPP_INFO(this->get_logger(), "Analyzing detections (filtering static obstacles)...");
 
@@ -192,13 +189,13 @@ public:
                 continue;
             }
             
-            // FILTER 3: Within reasonable bounds
-            if (detection.x < -13.0 || detection.x > 13.0) continue;
-            if (detection.y < -20.0 || detection.y > 23.0) continue;
+            // FILTER 3: Within warehouse bounds
+            if (detection.x < -13.5 || detection.x > 13.5) continue;
+            if (detection.y < -23.5 || detection.y > 23.5) continue;
             
-            // FILTER 4: Away from warehouse edges
-            if (detection.x < -11.5 || detection.x > 12.0) continue;
-            if (detection.y < -19.0 || detection.y > 22.0) continue;
+            // FILTER 4: Away from warehouse edges (1.5m safety margin)
+            if (detection.x < -12.0 || detection.x > 12.0) continue;
+            if (detection.y < -22.0 || detection.y > 22.0) continue;
             
             // CALCULATE CONFIDENCE SCORE (0-100)
             double score = 0.0;
@@ -210,8 +207,8 @@ public:
             score += std::min(detection.hit_scans / 5.0, 40.0);
             
             // Factor 3: Distance from edges (max 30 points)
-            double edge_dist_x = std::min(detection.x + 11.5, 12.0 - detection.x);
-            double edge_dist_y = std::min(detection.y + 19.0, 22.0 - detection.y);
+            double edge_dist_x = std::min(detection.x + 12.0, 12.0 - detection.x);
+            double edge_dist_y = std::min(detection.y + 22.0, 22.0 - detection.y);
             double min_edge_dist = std::min(edge_dist_x, edge_dist_y);
             score += std::min(min_edge_dist * 3.0, 30.0);
             
@@ -246,7 +243,6 @@ public:
             bool merged = false;
             for (auto& existing : clustered) {
                 if (std::hypot(cand.x - existing.x, cand.y - existing.y) < 1.5) {
-                    // Weighted average (favor higher scores)
                     double w1 = existing.score;
                     double w2 = cand.score;
                     double total_w = w1 + w2;
@@ -335,28 +331,13 @@ private:
 
     void initializeKnownObstacles() {
         known_obstacles_ = {
-            {-8.5, -13.0},   // SHELF_BIG_0
-            {6.5, -13.0},    // SHELF_BIG_1
-            {-1.5, -13.0},   // SHELF_BIG_2
-            {13.5, 4.5},     // SHELF_3
-            {10.0, 4.5},     // SHELF_4
-            {13.5, -21.0},   // SHELF_5
-            {13.5, -15.0},   // SHELF_6
-            {0.4, -2.0},     // SHELF_7
-            {3.5, 9.5},      // SHELF_BIG_3
-            {-1.3, 18.5},    // SHELF_BIG_4
-            {-10.0, 21.5},   // SHELF_0
-            {-7.0, 23.6},    // SHELF_1
-            {-4.0, 21.5},    // SHELF_2
-            {-10.4, 14.75},  // BARRIER_0
-            {-10.4, 10.5},   // BARRIER_1
-            {-10.4, 6.5},    // BARRIER_2
-            {-12.85, 4.85},  // BARRIER_3
-            {14.3, -5.5},    // CHAIR_0
-            {14.3, -4.0},    // CHAIR_1
-            {-11.5, 6.4},    // FCHAIR_0
-            {-14.0, 6.5},    // FCHAIR_1
-            {-12.7, 6.5},    // TABLE_0
+            {-8.5, -13.0}, {6.5, -13.0}, {-1.5, -13.0},
+            {13.5, 4.5}, {10.0, 4.5}, {13.5, -21.0}, {13.5, -15.0},
+            {0.4, -2.0}, {3.5, 9.5}, {-1.3, 18.5},
+            {-10.0, 21.5}, {-7.0, 23.6}, {-4.0, 21.5},
+            {-10.4, 14.75}, {-10.4, 10.5}, {-10.4, 6.5}, {-12.85, 4.85},
+            {14.3, -5.5}, {14.3, -4.0},
+            {-11.5, 6.4}, {-14.0, 6.5}, {-12.7, 6.5},
         };
     }
 
@@ -560,87 +541,104 @@ int main(int argc, char **argv) {
         waypoints.push_back(p);
     };
 
-    std::cout << "[Main] Creating comprehensive coverage pattern..." << std::endl;
+    std::cout << "[Main] Creating FULL warehouse coverage..." << std::endl;
+    std::cout << "[Main] Warehouse bounds: X(-13.9 to 14.2), Y(-23.9 to 24.2)" << std::endl;
     
     // ================================================================
-    // OPTIMIZED COVERAGE PATTERN
-    // Systematic zigzag with multi-angle approaches to key locations
+    // COMPLETE WAREHOUSE ZIGZAG COVERAGE
+    // LiDAR range: 3m, Waypoint spacing: 4m (ensures overlap)
+    // Coverage: -12 to 12 (X), -22 to 22 (Y)
     // ================================================================
-    std::vector<std::pair<double, double>> grid_pattern = {
-        // Bottom section
-        {2.0, -18.0}, {-2.0, -18.0}, {-6.0, -18.0}, {-10.0, -18.0},
-        
-        // Rise up left side
-        {-10.0, -12.0}, {-10.0, -6.0}, {-10.0, 0.0},
-        
-        // H1 ORIGINAL - Multi-angle approach
-        {-6.0, -2.0}, {-3.0, -1.0}, {0.0, -1.0},   // West approach
-        {1.0, -1.0},                                // Direct check
-        {1.0, 1.0}, {3.0, 0.0},                     // East approach
-        
-        // H1 NEW LOCATION AREA - Multi-angle comprehensive coverage
-        {2.0, 2.0},   // SW approach
-        {3.0, 3.0},   // Closer SW
-        {4.0, 2.0},   // S approach  
-        {5.0, 1.0},   // SE approach
-        {6.0, 2.0},   // E approach
-        {6.0, 4.0},   // NE approach
-        {5.0, 5.0},   // N approach
-        {4.0, 4.0},   // NW approach
-        {3.0, 4.0},   // W approach
-        {5.0, 3.0},   // DIRECT CENTER (360° spin)
-        
-        // Continue middle coverage
-        {8.0, 4.0}, {10.0, 6.0}, {10.0, 10.0},
-        
-        // Middle section  
-        {6.0, 10.0}, {2.0, 10.0}, {-2.0, 10.0}, {-6.0, 10.0}, {-10.0, 10.0},
-        
-        // H2 ORIGINAL - Multi-angle approach
-        {-10.0, 12.0}, {-10.0, 14.0},               // S approach
-        {-12.0, 13.0},                               // SE approach
-        {-12.0, 15.0},                               // DIRECT CHECK (360° spin)
-        {-12.0, 17.0},                               // N approach
-        {-10.0, 16.0},                               // NE approach
-        
-        // Top section
-        {-6.0, 18.0}, {-2.0, 20.0}, {2.0, 22.0}, {6.0, 20.0}, {8.0, 18.0},
-        
-        // Final sweep
-        {4.0, 16.0}, {0.0, 16.0}, {-4.0, 16.0}, {-8.0, 16.0},
-    };
+    std::vector<std::pair<double, double>> grid_pattern;
     
-    std::cout << "[Main] Pattern: " << grid_pattern.size() << " waypoints" << std::endl;
+    // BOTTOM SECTION: y = -22 to -18 (5 rows)
+    for (double y = -22.0; y <= -18.0; y += 4.0) {
+        if (static_cast<int>(y) % 8 == 0) {  // Even row: left to right
+            for (double x = -10.0; x <= 10.0; x += 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        } else {  // Odd row: right to left
+            for (double x = 10.0; x >= -10.0; x -= 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        }
+    }
+    
+    // MIDDLE-BOTTOM SECTION: y = -14 to -2 (4 rows)
+    for (double y = -14.0; y <= -2.0; y += 4.0) {
+        if (static_cast<int>(y) % 8 == 0) {
+            for (double x = -10.0; x <= 10.0; x += 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        } else {
+            for (double x = 10.0; x >= -10.0; x -= 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        }
+    }
+    
+    // CENTER SECTION: y = 2 to 6 (2 rows) - DENSE for H1 area
+    for (double y = 2.0; y <= 6.0; y += 4.0) {
+        if (static_cast<int>(y) % 8 == 0) {
+            for (double x = -10.0; x <= 10.0; x += 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        } else {
+            for (double x = 10.0; x >= -10.0; x -= 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        }
+    }
+    
+    // MIDDLE-TOP SECTION: y = 10 to 18 (3 rows) - H2 area
+    for (double y = 10.0; y <= 18.0; y += 4.0) {
+        if (static_cast<int>(y) % 8 == 0) {
+            for (double x = -10.0; x <= 10.0; x += 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        } else {
+            for (double x = 10.0; x >= -10.0; x -= 4.0) {
+                grid_pattern.push_back({x, y});
+            }
+        }
+    }
+    
+    // TOP SECTION: y = 22 (1 row)
+    for (double x = -10.0; x <= 10.0; x += 4.0) {
+        grid_pattern.push_back({x, 22.0});
+    }
+    
+    std::cout << "[Main] Generated " << grid_pattern.size() << " waypoints" << std::endl;
+    std::cout << "[Main] Estimated time: " << (grid_pattern.size() * 10 / 60) << " minutes" << std::endl;
     
     for (const auto& [x, y] : grid_pattern) {
         add_wp(x, y, 90.0);
     }
     
-    // 360° spins at critical locations
+    // 360° spins at key locations
     std::vector<int> spin_at_waypoints;
     
     for (size_t i = 0; i < grid_pattern.size(); ++i) {
         double x = grid_pattern[i].first;
         double y = grid_pattern[i].second;
         
-        // Spin at H1 original
-        if (std::hypot(x - 1.0, y + 1.0) < 0.5) {
+        // Spin at H1 original (1, -1)
+        if (std::hypot(x - 1.0, y + 1.0) < 2.0) {
             spin_at_waypoints.push_back(i);
-            std::cout << "[Main] 360° at WP" << i << " (H1 original)" << std::endl;
         }
         
-        // Spin at H1 new location area (5, 3)
-        if (std::hypot(x - 5.0, y - 3.0) < 0.5) {
-            spin_at_waypoints.push_back(i);
-            std::cout << "[Main] 360° at WP" << i << " (H1 new @ 5,3)" << std::endl;
-        }
+        // Spin at common test locations
+        if (std::hypot(x - 5.0, y - 3.0) < 2.0) spin_at_waypoints.push_back(i);
+        if (std::hypot(x + 4.0, y + 10.0) < 2.0) spin_at_waypoints.push_back(i);
+        if (std::hypot(x - 10.0, y - 12.0) < 2.0) spin_at_waypoints.push_back(i);
         
-        // Spin at H2 original
-        if (std::hypot(x + 12.0, y - 15.0) < 0.5) {
+        // Spin at H2 original (-12, 15)
+        if (std::hypot(x + 12.0, y - 15.0) < 2.0) {
             spin_at_waypoints.push_back(i);
-            std::cout << "[Main] 360° at WP" << i << " (H2 original)" << std::endl;
         }
     }
+    
+    std::cout << "[Main] 360° spins at " << spin_at_waypoints.size() << " locations" << std::endl;
 
     // Execute navigation
     for (size_t i = 0; i < waypoints.size(); ++i) {
@@ -658,7 +656,6 @@ int main(int argc, char **argv) {
         if (navigator.GetResult() == rclcpp_action::ResultCode::SUCCEEDED) {
             std::cout << "[Main] ✓ WP" << (i+1) << std::endl;
             
-            // Perform 360° spin at critical waypoints
             if (std::find(spin_at_waypoints.begin(), spin_at_waypoints.end(), i) 
                 != spin_at_waypoints.end()) {
                 std::cout << "[Main] Spinning 360°..." << std::endl;
@@ -666,10 +663,10 @@ int main(int argc, char **argv) {
                 while (rclcpp::ok() && !navigator.IsTaskComplete()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             
-            if ((i+1) % 10 == 0) {
+            if ((i+1) % 15 == 0) {
                 detector->printDebugInfo();
             }
             
@@ -679,7 +676,7 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "\n========================================" << std::endl;
-    std::cout << "WAREHOUSE SCAN COMPLETE!" << std::endl;
+    std::cout << "FULL WAREHOUSE SCAN COMPLETE!" << std::endl;
     std::cout << "========================================\n" << std::endl;
     
     detector->reportHumans();
