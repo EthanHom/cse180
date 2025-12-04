@@ -189,7 +189,7 @@ public:
                 continue;
             }
             
-            // FILTER 3: Within warehouse bounds
+            // FILTER 3: Within warehouse bounds (-14 to 14, -24 to 24)
             if (detection.x < -13.5 || detection.x > 13.5) continue;
             if (detection.y < -23.5 || detection.y > 23.5) continue;
             
@@ -542,80 +542,68 @@ int main(int argc, char **argv) {
     };
 
     std::cout << "[Main] Creating FULL warehouse coverage..." << std::endl;
-    std::cout << "[Main] Warehouse bounds: X(-13.9 to 14.2), Y(-23.9 to 24.2)" << std::endl;
+    std::cout << "[Main] Warehouse corners: (-14,±24), (14,±24)" << std::endl;
+    std::cout << "[Main] Coverage zone (2m margin): X(-12 to 12), Y(-22 to 22)" << std::endl;
     
     // ================================================================
-    // COMPLETE WAREHOUSE ZIGZAG COVERAGE
-    // LiDAR range: 3m, Waypoint spacing: 4m (ensures overlap)
-    // Coverage: -12 to 12 (X), -22 to 22 (Y)
+    // SYSTEMATIC ZIGZAG GRID COVERAGE
+    // - Warehouse: 28m × 48m (-14 to 14, -24 to 24)
+    // - Coverage: 24m × 44m (-12 to 12, -22 to 22) with 2m margin
+    // - LiDAR range: 3m
+    // - Waypoint spacing: 4m (ensures 1m overlap)
+    // - Pattern: 7 columns × 12 rows = 84 waypoints
     // ================================================================
     std::vector<std::pair<double, double>> grid_pattern;
     
-    // BOTTOM SECTION: y = -22 to -18 (5 rows)
-    for (double y = -22.0; y <= -18.0; y += 4.0) {
-        if (static_cast<int>(y) % 8 == 0) {  // Even row: left to right
-            for (double x = -10.0; x <= 10.0; x += 4.0) {
+    // Y range: -22 to 22 in 4m steps = 12 rows
+    // X range: -12 to 12 in 4m steps = 7 columns (-12, -8, -4, 0, 4, 8, 12)
+    
+    for (double y = -22.0; y <= 22.0; y += 4.0) {
+        int row_num = static_cast<int>((y + 22.0) / 4.0);
+        if (row_num % 2 == 0) {  // Even row: left to right
+            for (double x = -12.0; x <= 12.0; x += 4.0) {
                 grid_pattern.push_back({x, y});
             }
         } else {  // Odd row: right to left
-            for (double x = 10.0; x >= -10.0; x -= 4.0) {
+            for (double x = 12.0; x >= -12.0; x -= 4.0) {
                 grid_pattern.push_back({x, y});
             }
         }
-    }
-    
-    // MIDDLE-BOTTOM SECTION: y = -14 to -2 (4 rows)
-    for (double y = -14.0; y <= -2.0; y += 4.0) {
-        if (static_cast<int>(y) % 8 == 0) {
-            for (double x = -10.0; x <= 10.0; x += 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        } else {
-            for (double x = 10.0; x >= -10.0; x -= 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        }
-    }
-    
-    // CENTER SECTION: y = 2 to 6 (2 rows) - DENSE for H1 area
-    for (double y = 2.0; y <= 6.0; y += 4.0) {
-        if (static_cast<int>(y) % 8 == 0) {
-            for (double x = -10.0; x <= 10.0; x += 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        } else {
-            for (double x = 10.0; x >= -10.0; x -= 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        }
-    }
-    
-    // MIDDLE-TOP SECTION: y = 10 to 18 (3 rows) - H2 area
-    for (double y = 10.0; y <= 18.0; y += 4.0) {
-        if (static_cast<int>(y) % 8 == 0) {
-            for (double x = -10.0; x <= 10.0; x += 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        } else {
-            for (double x = 10.0; x >= -10.0; x -= 4.0) {
-                grid_pattern.push_back({x, y});
-            }
-        }
-    }
-    
-    // TOP SECTION: y = 22 (1 row)
-    for (double x = -10.0; x <= 10.0; x += 4.0) {
-        grid_pattern.push_back({x, 22.0});
     }
     
     std::cout << "[Main] Generated " << grid_pattern.size() << " waypoints" << std::endl;
-    std::cout << "[Main] Estimated time: " << (grid_pattern.size() * 10 / 60) << " minutes" << std::endl;
+    std::cout << "[Main] Pattern: 7 columns (-12 to 12) × 12 rows (-22 to 22)" << std::endl;
+    std::cout << "[Main] Estimated time: " << (grid_pattern.size() * 8 / 60) << "-" 
+              << (grid_pattern.size() * 12 / 60) << " minutes" << std::endl;
+    
+    // Verify coverage of critical locations
+    std::vector<std::pair<double, double>> test_locations = {
+        {1.0, -1.0}, {-12.0, 15.0},      // Original H1, H2
+        {5.0, 3.0}, {10.0, 12.0},        // Test locations
+        {-4.0, -10.0}, {12.0, 11.0}      // Edge locations
+    };
+    
+    for (const auto& [tx, ty] : test_locations) {
+        bool covered = false;
+        for (const auto& [x, y] : grid_pattern) {
+            if (std::hypot(x - tx, y - ty) <= 3.0) {  // Within LiDAR range
+                covered = true;
+                std::cout << "[Main] ✓ Location (" << tx << ", " << ty 
+                          << ") covered by waypoint (" << x << ", " << y << ")" << std::endl;
+                break;
+            }
+        }
+        if (!covered) {
+            std::cerr << "[Main] ⚠ WARNING: Location (" << tx << ", " << ty 
+                      << ") NOT COVERED!" << std::endl;
+        }
+    }
     
     for (const auto& [x, y] : grid_pattern) {
         add_wp(x, y, 90.0);
     }
     
-    // 360° spins at key locations
+    // 360° spins at strategic locations
     std::vector<int> spin_at_waypoints;
     
     for (size_t i = 0; i < grid_pattern.size(); ++i) {
@@ -623,26 +611,49 @@ int main(int argc, char **argv) {
         double y = grid_pattern[i].second;
         
         // Spin at H1 original (1, -1)
-        if (std::hypot(x - 1.0, y + 1.0) < 2.0) {
+        if (std::hypot(x - 1.0, y + 1.0) <= 3.0) {
             spin_at_waypoints.push_back(i);
+            std::cout << "[Main] 360° at WP" << (i+1) << " near H1 original (1,-1)" << std::endl;
         }
         
-        // Spin at common test locations
-        if (std::hypot(x - 5.0, y - 3.0) < 2.0) spin_at_waypoints.push_back(i);
-        if (std::hypot(x + 4.0, y + 10.0) < 2.0) spin_at_waypoints.push_back(i);
-        if (std::hypot(x - 10.0, y - 12.0) < 2.0) spin_at_waypoints.push_back(i);
-        
         // Spin at H2 original (-12, 15)
-        if (std::hypot(x + 12.0, y - 15.0) < 2.0) {
+        if (std::hypot(x + 12.0, y - 15.0) <= 3.0) {
             spin_at_waypoints.push_back(i);
+            std::cout << "[Main] 360° at WP" << (i+1) << " near H2 original (-12,15)" << std::endl;
+        }
+        
+        // Spin near test location (5, 3)
+        if (std::hypot(x - 5.0, y - 3.0) <= 3.0) {
+            spin_at_waypoints.push_back(i);
+            std::cout << "[Main] 360° at WP" << (i+1) << " near (5,3)" << std::endl;
+        }
+        
+        // Spin near edge location (12, 11)
+        if (std::hypot(x - 12.0, y - 11.0) <= 3.0) {
+            spin_at_waypoints.push_back(i);
+            std::cout << "[Main] 360° at WP" << (i+1) << " near edge (12,11)" << std::endl;
         }
     }
     
     std::cout << "[Main] 360° spins at " << spin_at_waypoints.size() << " locations" << std::endl;
 
-    // Execute navigation
+    // Execute navigation with progress tracking
+    int success_count = 0;
+    int fail_count = 0;
+    auto start_time = std::chrono::steady_clock::now();
+    
     for (size_t i = 0; i < waypoints.size(); ++i) {
         auto goal = std::make_shared<geometry_msgs::msg::Pose>(waypoints[i].pose);
+        
+        // Progress indicator every 10 waypoints
+        if (i % 10 == 0 || i == waypoints.size() - 1) {
+            auto elapsed = std::chrono::steady_clock::now() - start_time;
+            int mins = std::chrono::duration_cast<std::chrono::minutes>(elapsed).count();
+            std::cout << "\n[Progress] " << (i+1) << "/" << waypoints.size() 
+                      << " (" << (100*(i+1)/waypoints.size()) << "%) - " 
+                      << mins << " min elapsed" << std::endl;
+        }
+        
         std::cout << "[Main] -> WP" << (i+1) << "/" << waypoints.size() 
                   << " (" << grid_pattern[i].first << ", " << grid_pattern[i].second << ")" 
                   << std::endl;
@@ -655,7 +666,9 @@ int main(int argc, char **argv) {
 
         if (navigator.GetResult() == rclcpp_action::ResultCode::SUCCEEDED) {
             std::cout << "[Main] ✓ WP" << (i+1) << std::endl;
+            success_count++;
             
+            // Perform 360° spin at strategic locations
             if (std::find(spin_at_waypoints.begin(), spin_at_waypoints.end(), i) 
                 != spin_at_waypoints.end()) {
                 std::cout << "[Main] Spinning 360°..." << std::endl;
@@ -663,20 +676,37 @@ int main(int argc, char **argv) {
                 while (rclcpp::ok() && !navigator.IsTaskComplete()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
             
-            if ((i+1) % 15 == 0) {
+            // Print debug info periodically
+            if ((i+1) % 20 == 0) {
                 detector->printDebugInfo();
             }
             
         } else {
             std::cerr << "[Main] ✗ Failed WP" << (i+1) << " - continuing..." << std::endl;
+            fail_count++;
+            
+            // Safety check: abort if too many failures
+            if (fail_count > waypoints.size() * 0.3) {
+                std::cerr << "[Main] ⚠ Too many failures (" << fail_count 
+                          << "/" << waypoints.size() << "), aborting scan..." << std::endl;
+                break;
+            }
         }
     }
 
+    auto total_time = std::chrono::steady_clock::now() - start_time;
+    int total_mins = std::chrono::duration_cast<std::chrono::minutes>(total_time).count();
+
     std::cout << "\n========================================" << std::endl;
-    std::cout << "FULL WAREHOUSE SCAN COMPLETE!" << std::endl;
+    std::cout << "     FULL WAREHOUSE SCAN COMPLETE!     " << std::endl;
+    std::cout << "========================================" << std::endl;
+    std::cout << "Waypoints: " << success_count << "/" << waypoints.size() 
+              << " successful (" << (100*success_count/waypoints.size()) << "%)" << std::endl;
+    std::cout << "Failures: " << fail_count << std::endl;
+    std::cout << "Time: " << total_mins << " minutes" << std::endl;
     std::cout << "========================================\n" << std::endl;
     
     detector->reportHumans();
