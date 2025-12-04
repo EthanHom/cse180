@@ -1,0 +1,1965 @@
+Does this implementation follow what the MRTP textbook would recommend? Is this implementation also correct?
+
+
+Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
+If you choose to work individually, no registration is required. Any student not listed on a team will automatically be considered to be working alone.
+All teams must be registered by December 5.
+Project presentations will take place during the last week of classes.
+Individual projects: Present during your assigned lab section.
+Team projects: Present in any of the lab sections assigned to your team (no exceptions).
+=============================================================================================
+First, make sure to get the latest version of the MRTP repository, because the files for the final project have just been added. After having rebuilt the MRTP workspace, you can launch the simulation environment as follows: 
+ros2 launch gazeboenvs tb4_warehouse.launch.py
+If you want to run both gazebo and rviz (useful for debugging), use the following command:
+ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
+Note that the robot starts with pose x=2.12, y=-21.3 and yaw = 1.57 (radians). The localization algorithm is initialized with these values.
+As you can see from Gazebo and Rviz, the robot is operating in a warehouse environment in which there are two stationary human characters. The footprint of the humans is included in the map loaded in gazebo, and available to the robot through the /map topic. Your task is to write a controller for the robot to determine
+if the humans have move to a different location;
+in case they have moved, determine where they are. Note that if the characters have moved, the will be permanently relocated at a different position, but they will not keep moving.
+To solve this problem you should:
+use the navigation library provided in class to move the robot in the environment using the nav2 stack
+retrieve the map of the environment from /map
+use the range finder on top of the robot to check if the environment have changed (e.g., if the humans have moved).
+use the topic amcl_pose to retrieve the position of the robot in the environment
+Deliverables:
+zipped file with code (included in a self contained workspace); to be uploaded to catcourses;
+one pager description of the solution (pdf); to be uploaded to catcourses;
+presentation with demo to be given during lab hours.
+ 
+Q&A:
+Q: What does it mean that I have to submit a fully contained file?
+A: It means that the zipped file you submit must have a workspace, and inside the workspace it must have all code you developed (located in a suitable package). If your code relies on additional ros2 standard packages (i.e., packages that can be installed with atp install) you should list them. If the packages are not standard (e.g., downloaded from github), please include them in your submission. 
+Q: How can I alter the position of the characters to test if my solution works?
+A: Start the simulation environment in Gazebo and identify the character you intend to move. Click on it with the mouse to select it. A white parallelepiped will appear around the character, indicating that it has been selected. In the upper right corner of the screen, open the “Pose” menu. From there, you can modify the character’s x, y, and z coordinates, as well as its roll, pitch, and yaw. Please note that changes take effect only after you press the Tab key or select a different item in the menu.
+
+
+KNOWN OBSTACTLES:
+SHELF_BIG_0: (x: -8.5, y: -13)
+SHELF_BIG_1: (x: 6.5, y: -13)
+SHELF_BIG_2: (x: -1.5, y: -13)
+SHELF_3: (x: 13.5, y: 4.5)
+SHELF_4: (x: 10, y: 4.5)
+SHELF_5: (x: 13.5, y: -21)
+SHELF_6: (x: 13.5, y: -15)
+SHELF_7: (x: 0.4, y: -2)
+SHELF_BIG_3: (x: 3.5, y: 9.5, yaw(rad): 1.57)
+SHELF_BIG_4: (x: -1.3, y: 18.5, yaw(rad): 1.57)
+SHELF_0: (x: -10, y: 21.5, yaw(rad): 1.57)
+SHELF_1: (x: -7, y: 23.6, yaw(rad): 1.57)
+SHELF_2: (x: -4, y: 21.5, yaw(rad): 1.57)
+BARRIER_0: (x: -10.4, y: 14.75, yaw(rad): 1.57)
+BARRIER_1: (x: -10.4, y: 10.5, yaw(rad): 1.57)
+BARRIER_2: (x: -10.4, y: 6.5, yaw(rad): 1.57)
+BARRIER_3: (x: -12.85, y: 4.85)
+CHAIR_0: (x: 14.3, y: -5.5, yaw(rad): 3)
+CHAIR_1: (x: 14.3, y: -4, yaw(rad): -3)
+FCHAIR_0: (x: -11.5, y: 6.4, yaw(rad): -1.8)
+FCHAIR1: (x: -14, y: 6.5, yaw(rad): 1.9)
+TABLE0: (x: -12.7, y: 6.5)
+
+
+
+Terminal Results:
+(For Human 1 who has not moved)
+(.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+[INFO] [1764824659.947080133] [tb4_human_detector]: HumanDetector initialized.
+[INFO] [1764824659.999744174] [navigator]: Created instance of Navigator
+[Main] Waiting for map...
+[WARN] [1764824660.000338091] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+[WARN] [1764824660.040773133] [tb4_human_detector]: TF lookup failed: "map" passed to lookupTransform argument target_frame does not exist. 
+[INFO] [1764824661.121353550] [tb4_human_detector]: Map received: 1006x1674, resolution: 0.030
+[Main] Map received!
+[INFO] [1764824661.512958717] [tb4_human_detector]: [Scan 0] Robot at (2.12, -21.34), Near H1: no, Near H2: no
+[INFO] [1764824663.213909759] [tb4_human_detector]: Detection counters reset.
+[INFO] [1764824663.213983593] [navigator]: Inside SetInitialPose
+[INFO] [1764824663.214105593] [navigator]: Waiting for Nav2 to activate...
+[INFO] [1764824663.214121968] [navigator]: Waiting for amcl
+[INFO] [1764824663.232280218] [navigator]: amcl active
+[INFO] [1764824663.237745176] [navigator]: acml is ready
+[INFO] [1764824663.237776468] [navigator]: Waiting for initial pose
+[INFO] [1764824663.255478801] [tb4_human_detector]: [Scan 0] Robot at (2.12, -21.34), Near H1: no, Near H2: no
+[INFO] [1764824663.260602551] [navigator]: initial pose is received
+[INFO] [1764824663.260631968] [navigator]: Waiting for bt_navigator
+[INFO] [1764824663.266117968] [navigator]: bt_navigator active
+[INFO] [1764824663.271021718] [navigator]: bt_navigator is ready
+[INFO] [1764824663.271095176] [navigator]: Nav2 is ready!
+[Main] Creating optimized warehouse coverage pattern...
+[Main] Coverage pattern has 84 waypoints for complete warehouse scan
+[Main] 360° scan at WP15 (intersection)
+[Main] 360° scan at WP20 (H1 original)
+[Main] 360° scan at WP27 (H1 original)
+[Main] 360° scan at WP30 (intersection)
+[Main] 360° scan at WP33 (H1 new location)
+[Main] 360° scan at WP45 (intersection)
+[Main] 360° scan at WP55 (H2 original)
+[Main] 360° scan at WP60 (intersection)
+[Main] 360° scan at WP72 (H2 original)
+[Main] 360° scan at WP75 (intersection)
+[Main] Navigating to Waypoint 1/84 (2, -20)...
+[INFO] [1764824663.271363593] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824663.276607259] [navigator]: GoToPose request was accepted
+[INFO] [1764824667.224900928] [navigator]: Task Go to Pose got result
+[ERROR] [1764824667.224961511] [navigator]: Goal was achieved
+[Main] ✓ Reached WP1 at (2.10226, -20.4759)
+[INFO] [1764824667.225067928] [tb4_human_detector]: [DEBUG] Scans: 31, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 61
+[Main] Navigating to Waypoint 2/84 (6, -18)...
+[INFO] [1764824667.225090928] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824667.228542678] [navigator]: GoToPose request was accepted
+[INFO] [1764824676.045499709] [tb4_human_detector]: [Scan 100] Robot at (2.14, -20.20), Near H1: no, Near H2: no
+[INFO] [1764824687.535464590] [navigator]: Task Go to Pose got result
+[ERROR] [1764824687.535512507] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 2 - continuing to next...
+[Main] Navigating to Waypoint 3/84 (10, -16)...
+[INFO] [1764824687.535644632] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824687.536485132] [navigator]: GoToPose request was accepted
+[INFO] [1764824687.655593132] [tb4_human_detector]: [Scan 200] Robot at (2.43, -20.09), Near H1: no, Near H2: no
+[INFO] [1764824698.563795470] [tb4_human_detector]: [Scan 300] Robot at (5.54, -22.64), Near H1: no, Near H2: no
+[INFO] [1764824709.415689086] [tb4_human_detector]: [Scan 400] Robot at (8.48, -20.25), Near H1: no, Near H2: no
+[INFO] [1764824719.491868174] [navigator]: Task Go to Pose got result
+[ERROR] [1764824719.491904508] [navigator]: Goal was achieved
+[Main] ✓ Reached WP3 at (9.87267, -16.3081)
+[INFO] [1764824719.491966924] [tb4_human_detector]: [DEBUG] Scans: 495, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 340
+[Main] Navigating to Waypoint 4/84 (13, -18)...
+[INFO] [1764824719.491992133] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824719.492575049] [navigator]: GoToPose request was accepted
+[INFO] [1764824720.126896550] [tb4_human_detector]: [Scan 500] Robot at (9.95, -16.13), Near H1: no, Near H2: no
+[INFO] [1764824730.720382180] [tb4_human_detector]: [Scan 600] Robot at (12.70, -17.77), Near H1: no, Near H2: no
+[INFO] [1764824734.296885750] [navigator]: Task Go to Pose got result
+[ERROR] [1764824734.296925125] [navigator]: Goal was achieved
+[Main] ✓ Reached WP4 at (13.0159, -17.9942)
+[INFO] [1764824734.297003667] [tb4_human_detector]: [DEBUG] Scans: 634, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 363
+[Main] Navigating to Waypoint 5/84 (13, -21)...
+[INFO] [1764824734.297016042] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824734.299096209] [navigator]: GoToPose request was accepted
+[INFO] [1764824741.530578712] [tb4_human_detector]: [Scan 700] Robot at (12.17, -18.85), Near H1: no, Near H2: no
+[INFO] [1764824752.250642051] [tb4_human_detector]: [Scan 800] Robot at (11.40, -22.04), Near H1: no, Near H2: no
+[INFO] [1764824759.251965762] [navigator]: Task Go to Pose got result
+[ERROR] [1764824759.252002762] [navigator]: Goal was achieved
+[Main] ✓ Reached WP5 at (12.8684, -21.7541)
+[INFO] [1764824759.252110762] [tb4_human_detector]: [DEBUG] Scans: 865, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 451
+[Main] Navigating to Waypoint 6/84 (6.5, -13)...
+[INFO] [1764824759.252137762] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824759.253581304] [navigator]: GoToPose request was accepted
+[INFO] [1764824763.060988750] [tb4_human_detector]: [Scan 900] Robot at (12.92, -21.69), Near H1: no, Near H2: no
+[INFO] [1764824773.694199421] [tb4_human_detector]: [Scan 1000] Robot at (13.20, -21.66), Near H1: no, Near H2: no
+[INFO] [1764824778.421509632] [navigator]: Task Go to Pose got result
+[ERROR] [1764824778.421547674] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 6 - continuing to next...
+[Main] Navigating to Waypoint 7/84 (3, -13)...
+[INFO] [1764824778.421605924] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824778.423059090] [navigator]: GoToPose request was accepted
+[INFO] [1764824784.497468885] [tb4_human_detector]: [Scan 1100] Robot at (11.97, -22.03), Near H1: no, Near H2: no
+[INFO] [1764824795.406052418] [tb4_human_detector]: [Scan 1200] Robot at (7.22, -22.78), Near H1: no, Near H2: no
+[INFO] [1764824806.393094923] [tb4_human_detector]: [Scan 1300] Robot at (4.08, -20.77), Near H1: no, Near H2: no
+[INFO] [1764824817.316277470] [tb4_human_detector]: [Scan 1400] Robot at (3.55, -15.87), Near H1: no, Near H2: no
+[INFO] [1764824823.553135375] [navigator]: Task Go to Pose got result
+[ERROR] [1764824823.553183708] [navigator]: Goal was achieved
+[Main] ✓ Reached WP7 at (3.14527, -13.444)
+[INFO] [1764824823.553267500] [tb4_human_detector]: [DEBUG] Scans: 1459, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 484
+[Main] Navigating to Waypoint 8/84 (-1.5, -13)...
+[INFO] [1764824823.553293542] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824823.554612625] [navigator]: GoToPose request was accepted
+[INFO] [1764824828.010395585] [tb4_human_detector]: [Scan 1500] Robot at (3.12, -13.22), Near H1: no, Near H2: no
+[INFO] [1764824838.608286757] [tb4_human_detector]: [Scan 1600] Robot at (3.43, -12.99), Near H1: no, Near H2: no
+[INFO] [1764824843.398011426] [navigator]: Task Go to Pose got result
+[ERROR] [1764824843.398050509] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 8 - continuing to next...
+[Main] Navigating to Waypoint 9/84 (-5, -13)...
+[INFO] [1764824843.398118634] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824843.398624009] [navigator]: GoToPose request was accepted
+[INFO] [1764824849.431181304] [tb4_human_detector]: [Scan 1700] Robot at (3.05, -11.51), Near H1: no, Near H2: no
+[INFO] [1764824860.211318003] [tb4_human_detector]: [Scan 1800] Robot at (2.32, -8.93), Near H1: no, Near H2: no
+[INFO] [1764824870.956932717] [tb4_human_detector]: [Scan 1900] Robot at (1.26, -6.40), Near H1: no, Near H2: no
+[INFO] [1764824881.671638388] [tb4_human_detector]: [Scan 2000] Robot at (0.07, -3.92), Near H1: no, Near H2: no
+[INFO] [1764824892.343228421] [tb4_human_detector]: [Scan 2100] Robot at (-1.08, -3.08), Near H1: no, Near H2: no
+[INFO] [1764824903.175240051] [tb4_human_detector]: [Scan 2200] Robot at (-4.00, -5.33), Near H1: no, Near H2: no
+[INFO] [1764824914.006899917] [tb4_human_detector]: [Scan 2300] Robot at (-4.54, -9.92), Near H1: no, Near H2: no
+[INFO] [1764824924.821704255] [tb4_human_detector]: [Scan 2400] Robot at (-5.10, -13.64), Near H1: no, Near H2: no
+[INFO] [1764824926.560601590] [navigator]: Task Go to Pose got result
+[ERROR] [1764824926.560724881] [navigator]: Goal was achieved
+[Main] ✓ Reached WP9 at (-5.09399, -13.5212)
+[INFO] [1764824926.560839715] [tb4_human_detector]: [DEBUG] Scans: 2417, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1139
+[Main] Navigating to Waypoint 10/84 (-8.5, -13)...
+[INFO] [1764824926.560859256] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824926.562110298] [navigator]: GoToPose request was accepted
+[INFO] [1764824935.504978635] [tb4_human_detector]: [Scan 2500] Robot at (-5.03, -13.20), Near H1: no, Near H2: no
+[INFO] [1764824946.105502668] [tb4_human_detector]: [Scan 2600] Robot at (-4.76, -13.08), Near H1: no, Near H2: no
+[INFO] [1764824946.380614126] [navigator]: Task Go to Pose got result
+[ERROR] [1764824946.380651001] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 10 - continuing to next...
+[Main] Navigating to Waypoint 11/84 (-11, -13)...
+[INFO] [1764824946.380769210] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764824946.382443460] [navigator]: GoToPose request was accepted
+[INFO] [1764824956.951601215] [tb4_human_detector]: [Scan 2700] Robot at (-5.62, -16.93), Near H1: no, Near H2: no
+[INFO] [1764824968.032967303] [tb4_human_detector]: [Scan 2800] Robot at (-6.80, -21.61), Near H1: no, Near H2: no
+[INFO] [1764824979.196838919] [tb4_human_detector]: [Scan 2900] Robot at (-10.72, -22.13), Near H1: no, Near H2: no
+[INFO] [1764824990.175248258] [tb4_human_detector]: [Scan 3000] Robot at (-10.89, -17.43), Near H1: no, Near H2: no
+[INFO] [1764825000.180311471] [navigator]: Task Go to Pose got result
+[ERROR] [1764825000.180386846] [navigator]: Goal was achieved
+[Main] ✓ Reached WP11 at (-10.9829, -13.3458)
+[INFO] [1764825000.180532429] [tb4_human_detector]: [DEBUG] Scans: 3093, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1378
+[Main] Navigating to Waypoint 12/84 (-11, -8)...
+[INFO] [1764825000.180600971] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825000.186782054] [navigator]: GoToPose request was accepted
+[INFO] [1764825001.026114971] [tb4_human_detector]: [Scan 3100] Robot at (-10.98, -12.97), Near H1: no, Near H2: no
+[INFO] [1764825011.118692462] [navigator]: Task Go to Pose got result
+[ERROR] [1764825011.118965045] [navigator]: Goal was achieved
+[Main] ✓ Reached WP12 at (-11.0094, -8.54901)
+[INFO] [1764825011.119063754] [tb4_human_detector]: [DEBUG] Scans: 3193, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1385
+[Main] Navigating to Waypoint 13/84 (-6, -8)...
+[INFO] [1764825011.119083170] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825011.119875462] [navigator]: GoToPose request was accepted
+[INFO] [1764825011.963745796] [tb4_human_detector]: [Scan 3200] Robot at (-10.99, -8.15), Near H1: no, Near H2: no
+[INFO] [1764825023.014819259] [tb4_human_detector]: [Scan 3300] Robot at (-10.55, -3.45), Near H1: no, Near H2: no
+[INFO] [1764825034.062054459] [tb4_human_detector]: [Scan 3400] Robot at (-6.97, -4.44), Near H1: no, Near H2: no
+[INFO] [1764825044.966408464] [tb4_human_detector]: [Scan 3500] Robot at (-6.00, -8.04), Near H1: no, Near H2: no
+[INFO] [1764825045.694571047] [navigator]: Task Go to Pose got result
+[ERROR] [1764825045.694626381] [navigator]: Goal was achieved
+[Main] ✓ Reached WP13 at (-5.99032, -7.96803)
+[INFO] [1764825045.694769297] [tb4_human_detector]: [DEBUG] Scans: 3507, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1530
+[Main] Navigating to Waypoint 14/84 (-1, -8)...
+[INFO] [1764825045.694786714] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825045.696348839] [navigator]: GoToPose request was accepted
+[INFO] [1764825056.118685844] [tb4_human_detector]: [Scan 3600] Robot at (-4.11, -4.25), Near H1: no, Near H2: no
+[INFO] [1764825066.996701668] [tb4_human_detector]: [Scan 3700] Robot at (-0.23, -3.58), Near H1: no, Near H2: no
+[INFO] [1764825077.718423132] [tb4_human_detector]: [Scan 3800] Robot at (-0.19, -7.66), Near H1: no, Near H2: no
+[INFO] [1764825081.937847009] [navigator]: Task Go to Pose got result
+[ERROR] [1764825081.937902134] [navigator]: Goal was achieved
+[Main] ✓ Reached WP14 at (-0.655825, -7.93352)
+[INFO] [1764825081.937988092] [tb4_human_detector]: [DEBUG] Scans: 3839, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1609
+[Main] Navigating to Waypoint 15/84 (4, -8)...
+[INFO] [1764825081.938013884] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825081.938877425] [navigator]: GoToPose request was accepted
+[INFO] [1764825088.481500762] [tb4_human_detector]: [Scan 3900] Robot at (1.04, -7.90), Near H1: no, Near H2: no
+[INFO] [1764825097.119476335] [navigator]: Task Go to Pose got result
+[ERROR] [1764825097.119530543] [navigator]: Goal was achieved
+[Main] ✓ Reached WP15 at (4.02149, -7.87496)
+[INFO] [1764825097.119627627] [tb4_human_detector]: [DEBUG] Scans: 3982, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1631
+[Main] Navigating to Waypoint 16/84 (9, -8)...
+[INFO] [1764825097.119744918] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825097.120201960] [navigator]: GoToPose request was accepted
+[INFO] [1764825099.170963878] [tb4_human_detector]: [Scan 4000] Robot at (4.02, -7.34), Near H1: no, Near H2: no
+[INFO] [1764825109.920512091] [tb4_human_detector]: [Scan 4100] Robot at (4.86, -3.20), Near H1: no, Near H2: no
+[INFO] [1764825120.598682805] [tb4_human_detector]: [Scan 4200] Robot at (8.09, -4.74), Near H1: no, Near H2: no
+[INFO] [1764825131.121627337] [navigator]: Task Go to Pose got result
+[ERROR] [1764825131.121669170] [navigator]: Goal was achieved
+[Main] ✓ Reached WP16 at (9.00288, -8.01693)
+[Main] Performing 360° scan...
+[INFO] [1764825131.121783754] [navigator]: Waiting for Spin action server
+[INFO] [1764825131.122983920] [navigator]: In task Spin response callback
+[INFO] [1764825131.122996254] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764825131.123062254] [navigator]: Spin request was accepted
+[INFO] [1764825131.200302962] [tb4_human_detector]: [Scan 4300] Robot at (9.00, -8.03), Near H1: no, Near H2: no
+[INFO] [1764825132.945391004] [navigator]: Task Spin got result
+[ERROR] [1764825132.948165671] [navigator]: Goal was achieved
+[INFO] [1764825133.949161255] [tb4_human_detector]: [DEBUG] Scans: 4327, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1754
+[Main] Navigating to Waypoint 17/84 (13, -8)...
+[INFO] [1764825133.949222922] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825133.949734005] [navigator]: GoToPose request was accepted
+[INFO] [1764825141.784923050] [tb4_human_detector]: [Scan 4400] Robot at (10.56, -8.04), Near H1: no, Near H2: no
+[INFO] [1764825152.381458055] [tb4_human_detector]: [Scan 4500] Robot at (12.40, -8.40), Near H1: no, Near H2: no
+[INFO] [1764825158.252026169] [navigator]: Task Go to Pose got result
+[ERROR] [1764825158.252066127] [navigator]: Goal was achieved
+[Main] ✓ Reached WP17 at (12.9666, -7.71539)
+[INFO] [1764825158.252143586] [tb4_human_detector]: [DEBUG] Scans: 4556, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1764
+[Main] Navigating to Waypoint 18/84 (13, -5.5)...
+[INFO] [1764825158.252201752] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825158.254201127] [navigator]: GoToPose request was accepted
+[INFO] [1764825163.139467380] [tb4_human_detector]: [Scan 4600] Robot at (12.96, -5.94), Near H1: no, Near H2: no
+[INFO] [1764825163.719565296] [navigator]: Task Go to Pose got result
+[ERROR] [1764825163.719629755] [navigator]: Goal was achieved
+[Main] ✓ Reached WP18 at (12.9538, -5.79491)
+[INFO] [1764825163.719703755] [tb4_human_detector]: [DEBUG] Scans: 4606, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1768
+[Main] Navigating to Waypoint 19/84 (10, -3)...
+[INFO] [1764825163.719713505] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825163.720601713] [navigator]: GoToPose request was accepted
+[INFO] [1764825173.907375593] [tb4_human_detector]: [Scan 4700] Robot at (10.29, -3.24), Near H1: no, Near H2: no
+[INFO] [1764825176.054303011] [navigator]: Task Go to Pose got result
+[ERROR] [1764825176.054339927] [navigator]: Goal was achieved
+[Main] ✓ Reached WP19 at (10.0402, -2.96067)
+[INFO] [1764825176.054402677] [tb4_human_detector]: [DEBUG] Scans: 4721, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1779
+[Main] Navigating to Waypoint 20/84 (5, -3)...
+[INFO] [1764825176.054424386] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825176.054878636] [navigator]: GoToPose request was accepted
+[INFO] [1764825184.523615292] [tb4_human_detector]: [Scan 4800] Robot at (7.56, -2.87), Near H1: no, Near H2: no
+[INFO] [1764825191.827806712] [navigator]: Task Go to Pose got result
+[ERROR] [1764825191.827842796] [navigator]: Goal was achieved
+[Main] ✓ Reached WP20 at (5.07131, -2.86528)
+[INFO] [1764825191.827889921] [tb4_human_detector]: [DEBUG] Scans: 4870, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1800
+[Main] Navigating to Waypoint 21/84 (0.4, -2)...
+[INFO] [1764825191.827899337] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825191.828926004] [navigator]: GoToPose request was accepted
+[INFO] [1764825195.044173255] [tb4_human_detector]: [Scan 4900] Robot at (5.10, -2.91), Near H1: no, Near H2: no
+[INFO] [1764825205.438867094] [tb4_human_detector]: [Scan 5000] Robot at (5.37, -2.77), Near H1: no, Near H2: no
+[INFO] [1764825211.437765972] [navigator]: Task Go to Pose got result
+[ERROR] [1764825211.437804972] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 21 - continuing to next...
+[Main] Navigating to Waypoint 22/84 (-4, -3)...
+[INFO] [1764825211.437856222] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825211.438998638] [navigator]: GoToPose request was accepted
+[INFO] [1764825216.028432959] [tb4_human_detector]: [Scan 5100] Robot at (5.09, -2.76), Near H1: no, Near H2: no
+[INFO] [1764825226.647010756] [tb4_human_detector]: [Scan 5200] Robot at (0.14, -3.06), Near H1: no, Near H2: no
+[INFO] [1764825237.260828011] [tb4_human_detector]: [Scan 5300] Robot at (-3.96, -2.99), Near H1: no, Near H2: no
+[INFO] [1764825237.940614220] [navigator]: Task Go to Pose got result
+[ERROR] [1764825237.940654970] [navigator]: Goal was achieved
+[Main] ✓ Reached WP22 at (-4.1308, -2.93584)
+[INFO] [1764825237.940889720] [tb4_human_detector]: [DEBUG] Scans: 5307, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1852
+[Main] Navigating to Waypoint 23/84 (-9, -3)...
+[INFO] [1764825237.940945345] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825237.942071428] [navigator]: GoToPose request was accepted
+[INFO] [1764825248.089817085] [tb4_human_detector]: [Scan 5400] Robot at (-7.37, -2.83), Near H1: no, Near H2: no
+[INFO] [1764825253.935103588] [navigator]: Task Go to Pose got result
+[ERROR] [1764825253.935192713] [navigator]: Goal was achieved
+[Main] ✓ Reached WP23 at (-9.06328, -2.7391)
+[INFO] [1764825253.935268422] [tb4_human_detector]: [DEBUG] Scans: 5455, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1903
+[Main] Navigating to Waypoint 24/84 (-13, -3)...
+[INFO] [1764825253.935294755] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825253.936975713] [navigator]: GoToPose request was accepted
+[INFO] [1764825258.874217466] [tb4_human_detector]: [Scan 5500] Robot at (-9.68, -2.76), Near H1: no, Near H2: no
+[INFO] [1764825269.111039095] [navigator]: Task Go to Pose got result
+[ERROR] [1764825269.111079720] [navigator]: Goal was achieved
+[Main] ✓ Reached WP24 at (-13.0719, -2.90746)
+[INFO] [1764825269.111145720] [tb4_human_detector]: [DEBUG] Scans: 5595, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1963
+[Main] Navigating to Waypoint 25/84 (-13, 0)...
+[INFO] [1764825269.111156887] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825269.111821095] [navigator]: GoToPose request was accepted
+[INFO] [1764825269.677486471] [tb4_human_detector]: [Scan 5600] Robot at (-13.06, -2.94), Near H1: no, Near H2: no
+[INFO] [1764825276.311424543] [navigator]: Task Go to Pose got result
+[ERROR] [1764825276.311477418] [navigator]: Goal was achieved
+[Main] ✓ Reached WP25 at (-13.0936, -0.531388)
+[INFO] [1764825276.311550960] [tb4_human_detector]: [DEBUG] Scans: 5660, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1999
+[Main] Navigating to Waypoint 26/84 (-9, 0)...
+[INFO] [1764825276.311565043] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825276.315041793] [navigator]: GoToPose request was accepted
+[INFO] [1764825280.693524587] [tb4_human_detector]: [Scan 5700] Robot at (-12.67, -0.04), Near H1: no, Near H2: no
+[INFO] [1764825290.715046091] [navigator]: Task Go to Pose got result
+[ERROR] [1764825290.715103050] [navigator]: Goal was achieved
+[Main] ✓ Reached WP26 at (-8.89651, -0.0937153)
+[INFO] [1764825290.715180883] [tb4_human_detector]: [DEBUG] Scans: 5794, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2009
+[Main] Navigating to Waypoint 27/84 (-4, 0)...
+[INFO] [1764825290.715235591] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825290.716078258] [navigator]: GoToPose request was accepted
+[INFO] [1764825291.488016717] [tb4_human_detector]: [Scan 5800] Robot at (-8.90, -0.15), Near H1: no, Near H2: no
+[INFO] [1764825302.370317847] [tb4_human_detector]: [Scan 5900] Robot at (-6.83, -0.85), Near H1: no, Near H2: no
+[INFO] [1764825310.820619045] [navigator]: Task Go to Pose got result
+[ERROR] [1764825310.820654087] [navigator]: Goal was achieved
+[Main] ✓ Reached WP27 at (-3.90809, -0.0857604)
+[INFO] [1764825310.820748795] [tb4_human_detector]: [DEBUG] Scans: 5979, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2037
+[Main] Navigating to Waypoint 28/84 (1, 0)...
+[INFO] [1764825310.820761170] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825310.821559628] [navigator]: GoToPose request was accepted
+[INFO] [1764825313.099046755] [tb4_human_detector]: [Scan 6000] Robot at (-3.93, -0.14), Near H1: no, Near H2: no
+[INFO] [1764825323.714447635] [tb4_human_detector]: [Scan 6100] Robot at (0.43, -0.08), Near H1: YES, Near H2: no
+[INFO] [1764825326.784932928] [navigator]: Task Go to Pose got result
+[ERROR] [1764825326.784981344] [navigator]: Goal was achieved
+[Main] ✓ Reached WP28 at (0.958804, 0.142357)
+[Main] Performing 360° scan...
+[INFO] [1764825326.785067761] [navigator]: Waiting for Spin action server
+[INFO] [1764825326.786273886] [navigator]: In task Spin response callback
+[INFO] [1764825326.786313094] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764825326.786394386] [navigator]: Spin request was accepted
+[INFO] [1764825328.687430762] [navigator]: Task Spin got result
+[ERROR] [1764825328.687483345] [navigator]: Goal was achieved
+[INFO] [1764825329.687813429] [tb4_human_detector]: [DEBUG] Scans: 6157, Near H1: 82 (hits: 82), Near H2: 0 (hits: 0), Clusters: 2055
+[Main] Navigating to Waypoint 29/84 (5, 0)...
+[INFO] [1764825329.687879304] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825329.688489429] [navigator]: GoToPose request was accepted
+[INFO] [1764825334.284567084] [tb4_human_detector]: [Scan 6200] Robot at (1.90, 0.13), Near H1: YES, Near H2: no
+[INFO] [1764825344.907155339] [tb4_human_detector]: [Scan 6300] Robot at (4.14, -0.05), Near H1: no, Near H2: no
+[INFO] [1764825353.588505885] [navigator]: Task Go to Pose got result
+[ERROR] [1764825353.588553718] [navigator]: Goal was achieved
+[Main] ✓ Reached WP29 at (4.88096, 0.120934)
+[INFO] [1764825353.588632801] [tb4_human_detector]: [DEBUG] Scans: 6382, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2087
+[Main] Navigating to Waypoint 30/84 (10, 0)...
+[INFO] [1764825353.588645593] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825353.590455760] [navigator]: GoToPose request was accepted
+[INFO] [1764825355.508617010] [tb4_human_detector]: [Scan 6400] Robot at (4.84, -0.04), Near H1: no, Near H2: no
+[INFO] [1764825366.156224210] [tb4_human_detector]: [Scan 6500] Robot at (8.50, 0.78), Near H1: no, Near H2: no
+[INFO] [1764825372.991696004] [navigator]: Task Go to Pose got result
+[ERROR] [1764825372.991766588] [navigator]: Goal was achieved
+[Main] ✓ Reached WP30 at (10.0537, 0.116257)
+[INFO] [1764825372.991847463] [tb4_human_detector]: [DEBUG] Scans: 6565, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2170
+[Main] Navigating to Waypoint 31/84 (14, 0)...
+[INFO] [1764825372.991890546] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825372.992763171] [navigator]: GoToPose request was accepted
+[INFO] [1764825376.720524923] [tb4_human_detector]: [Scan 6600] Robot at (10.35, 0.13), Near H1: no, Near H2: no
+[INFO] [1764825386.944113636] [navigator]: Task Go to Pose got result
+[ERROR] [1764825386.944151344] [navigator]: Goal was achieved
+[Main] ✓ Reached WP31 at (14.0826, -0.0296436)
+[Main] Performing 360° scan...
+[INFO] [1764825386.944224844] [navigator]: Waiting for Spin action server
+[INFO] [1764825386.944675303] [navigator]: In task Spin response callback
+[INFO] [1764825386.944685469] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764825386.944718136] [navigator]: Spin request was accepted
+[INFO] [1764825387.268002678] [tb4_human_detector]: [Scan 6700] Robot at (14.05, -0.11), Near H1: no, Near H2: no
+[INFO] [1764825388.846123095] [navigator]: Task Spin got result
+[ERROR] [1764825388.846155304] [navigator]: Goal was achieved
+[INFO] [1764825389.846587804] [tb4_human_detector]: [DEBUG] Scans: 6725, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2225
+[Main] Navigating to Waypoint 32/84 (14, 3)...
+[INFO] [1764825389.846656929] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825389.847632512] [navigator]: GoToPose request was accepted
+[INFO] [1764825397.916645252] [tb4_human_detector]: [Scan 6800] Robot at (14.02, 2.33), Near H1: no, Near H2: no
+[INFO] [1764825399.051050044] [navigator]: Task Go to Pose got result
+[ERROR] [1764825399.051101961] [navigator]: Goal was achieved
+[Main] ✓ Reached WP32 at (14.0099, 2.54452)
+[INFO] [1764825399.051209378] [tb4_human_detector]: [DEBUG] Scans: 6811, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2237
+[Main] Navigating to Waypoint 33/84 (10, 3)...
+[INFO] [1764825399.051232711] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825399.052669711] [navigator]: GoToPose request was accepted
+[INFO] [1764825408.608257549] [tb4_human_detector]: [Scan 6900] Robot at (11.20, 3.00), Near H1: no, Near H2: no
+[INFO] [1764825413.222184426] [navigator]: Task Go to Pose got result
+[ERROR] [1764825413.222226093] [navigator]: Goal was achieved
+[Main] ✓ Reached WP33 at (9.9467, 3.05812)
+[INFO] [1764825413.222295384] [tb4_human_detector]: [DEBUG] Scans: 6944, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2248
+[Main] Navigating to Waypoint 34/84 (5, 3)...
+[INFO] [1764825413.222309343] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825413.222950884] [navigator]: GoToPose request was accepted
+[INFO] [1764825419.240191596] [tb4_human_detector]: [Scan 7000] Robot at (8.62, 3.13), Near H1: no, Near H2: no
+[INFO] [1764825429.748753128] [tb4_human_detector]: [Scan 7100] Robot at (4.97, 2.94), Near H1: no, Near H2: no
+[INFO] [1764825429.800228670] [navigator]: Task Go to Pose got result
+[ERROR] [1764825429.800276461] [navigator]: Goal was achieved
+[Main] ✓ Reached WP34 at (4.94454, 2.93181)
+[Main] Performing 360° scan...
+[INFO] [1764825429.800337795] [navigator]: Waiting for Spin action server
+[INFO] [1764825429.800944753] [navigator]: In task Spin response callback
+[INFO] [1764825429.800963045] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764825429.801510128] [navigator]: Spin request was accepted
+[INFO] [1764825431.824786254] [navigator]: Task Spin got result
+[ERROR] [1764825431.824824712] [navigator]: Goal was achieved
+[INFO] [1764825432.825696421] [tb4_human_detector]: [DEBUG] Scans: 7130, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2297
+[Main] Navigating to Waypoint 35/84 (1, 3)...
+[INFO] [1764825432.825820838] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825432.828124379] [navigator]: GoToPose request was accepted
+[INFO] [1764825440.274770050] [tb4_human_detector]: [Scan 7200] Robot at (1.95, 2.96), Near H1: no, Near H2: no
+[INFO] [1764825444.369098093] [navigator]: Task Go to Pose got result
+[ERROR] [1764825444.369139885] [navigator]: Goal was achieved
+[Main] ✓ Reached WP35 at (0.854001, 2.93513)
+[INFO] [1764825444.369214385] [tb4_human_detector]: [DEBUG] Scans: 7239, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2309
+[Main] Navigating to Waypoint 36/84 (-4, 3)...
+[INFO] [1764825444.369225010] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825444.369812135] [navigator]: GoToPose request was accepted
+[INFO] [1764825450.794118721] [tb4_human_detector]: [Scan 7300] Robot at (-0.50, 2.96), Near H1: no, Near H2: no
+[INFO] [1764825460.758614628] [navigator]: Task Go to Pose got result
+[ERROR] [1764825460.758656878] [navigator]: Goal was achieved
+[Main] ✓ Reached WP36 at (-4.12233, 3.09649)
+[INFO] [1764825460.758796462] [tb4_human_detector]: [DEBUG] Scans: 7394, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2355
+[Main] Navigating to Waypoint 37/84 (-9, 3)...
+[INFO] [1764825460.758827253] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825460.759438878] [navigator]: GoToPose request was accepted
+[INFO] [1764825461.466641629] [tb4_human_detector]: [Scan 7400] Robot at (-4.08, 3.00), Near H1: no, Near H2: no
+[INFO] [1764825472.235599426] [tb4_human_detector]: [Scan 7500] Robot at (-7.83, 3.11), Near H1: no, Near H2: no
+[INFO] [1764825477.349748928] [navigator]: Task Go to Pose got result
+[ERROR] [1764825477.349828095] [navigator]: Goal was achieved
+[Main] ✓ Reached WP37 at (-8.98769, 3.27709)
+[INFO] [1764825477.349922511] [tb4_human_detector]: [DEBUG] Scans: 7548, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2398
+[Main] Navigating to Waypoint 38/84 (-12.85, 4.85)...
+[INFO] [1764825477.349945428] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825477.351313386] [navigator]: GoToPose request was accepted
+[INFO] [1764825483.031011416] [tb4_human_detector]: [Scan 7600] Robot at (-10.17, 3.67), Near H1: no, Near H2: no
+[INFO] [1764825492.930200796] [navigator]: Task Go to Pose got result
+[ERROR] [1764825492.930247171] [navigator]: Goal was achieved
+[Main] ✓ Reached WP38 at (-12.8096, 3.91706)
+[INFO] [1764825492.930337046] [tb4_human_detector]: [DEBUG] Scans: 7692, Near H1: 158 (hits: 158), Near H2: 0 (hits: 0), Clusters: 2451
+[Main] Navigating to Waypoint 39/84 (-14, 6.5)...
+[INFO] [1764825492.930352088] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825492.931818171] [navigator]: GoToPose request was accepted
+[INFO] [1764825493.858871130] [tb4_human_detector]: [Scan 7700] Robot at (-12.84, 3.97), Near H1: no, Near H2: no
+[INFO] [1764825504.781142677] [tb4_human_detector]: [Scan 7800] Robot at (-10.13, 3.91), Near H1: no, Near H2: no
+[INFO] [1764825515.753044584] [tb4_human_detector]: [Scan 7900] Robot at (-8.87, 7.64), Near H1: no, Near H2: no
+[INFO] [1764825526.646039715] [tb4_human_detector]: [Scan 8000] Robot at (-5.68, 10.90), Near H1: no, Near H2: no
+[INFO] [1764825537.525156928] [tb4_human_detector]: [Scan 8100] Robot at (-1.19, 12.13), Near H1: no, Near H2: no
+[INFO] [1764825548.414917169] [tb4_human_detector]: [Scan 8200] Robot at (3.08, 14.69), Near H1: no, Near H2: no
+[INFO] [1764825559.362190757] [tb4_human_detector]: [Scan 8300] Robot at (7.75, 16.19), Near H1: no, Near H2: no
+[INFO] [1764825570.281771346] [tb4_human_detector]: [Scan 8400] Robot at (7.81, 20.17), Near H1: no, Near H2: no
+[INFO] [1764825581.242578295] [tb4_human_detector]: [Scan 8500] Robot at (3.33, 22.62), Near H1: no, Near H2: no
+[INFO] [1764825592.210574759] [tb4_human_detector]: [Scan 8600] Robot at (-1.44, 23.68), Near H1: no, Near H2: no
+[INFO] [1764825603.214154125] [tb4_human_detector]: [Scan 8700] Robot at (-5.36, 22.26), Near H1: no, Near H2: no
+[INFO] [1764825614.142567505] [tb4_human_detector]: [Scan 8800] Robot at (-8.27, 22.05), Near H1: no, Near H2: no
+[INFO] [1764825625.084853927] [tb4_human_detector]: [Scan 8900] Robot at (-11.09, 22.79), Near H1: no, Near H2: no
+[INFO] [1764825635.997803168] [tb4_human_detector]: [Scan 9000] Robot at (-12.07, 18.00), Near H1: no, Near H2: no
+[INFO] [1764825646.884659548] [tb4_human_detector]: [Scan 9100] Robot at (-12.87, 12.99), Near H1: no, Near H2: no
+[INFO] [1764825657.839068595] [tb4_human_detector]: [Scan 9200] Robot at (-12.81, 7.98), Near H1: no, Near H2: no
+[INFO] [1764825668.644554002] [tb4_human_detector]: [Scan 9300] Robot at (-13.42, 6.55), Near H1: no, Near H2: no
+[INFO] [1764825669.969043586] [navigator]: Task Go to Pose got result
+[ERROR] [1764825669.969110045] [navigator]: Goal was achieved
+[Main] ✓ Reached WP39 at (-13.5836, 6.70345)
+[INFO] [1764825669.969187753] [tb4_human_detector]: [DEBUG] Scans: 9313, Near H1: 158 (hits: 158), Near H2: 75 (hits: 71), Clusters: 2832
+[Main] Navigating to Waypoint 40/84 (-10.4, 6.5)...
+[INFO] [1764825669.969212628] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825669.970654045] [navigator]: GoToPose request was accepted
+[INFO] [1764825679.426874716] [tb4_human_detector]: [Scan 9400] Robot at (-13.56, 6.70), Near H1: no, Near H2: no
+[INFO] [1764825690.077824721] [tb4_human_detector]: [Scan 9500] Robot at (-13.56, 6.70), Near H1: no, Near H2: no
+[INFO] [1764825695.460961709] [navigator]: Task Go to Pose got result
+[ERROR] [1764825695.461006251] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 40 - continuing to next...
+[Main] Navigating to Waypoint 41/84 (-6, 6.5)...
+[INFO] [1764825695.461085459] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825695.461659209] [navigator]: GoToPose request was accepted
+[INFO] [1764825701.069266920] [tb4_human_detector]: [Scan 9600] Robot at (-13.89, 8.06), Near H1: no, Near H2: no
+[INFO] [1764825712.013923050] [tb4_human_detector]: [Scan 9700] Robot at (-13.45, 12.86), Near H1: no, Near H2: no
+[INFO] [1764825722.972918041] [tb4_human_detector]: [Scan 9800] Robot at (-12.66, 17.62), Near H1: no, Near H2: no
+[INFO] [1764825733.944346588] [tb4_human_detector]: [Scan 9900] Robot at (-11.23, 22.43), Near H1: no, Near H2: no
+[INFO] [1764825744.917955135] [tb4_human_detector]: [Scan 10000] Robot at (-8.47, 22.39), Near H1: no, Near H2: no
+[INFO] [1764825755.829653001] [tb4_human_detector]: [Scan 10100] Robot at (-5.59, 21.85), Near H1: no, Near H2: no
+[INFO] [1764825766.775078548] [tb4_human_detector]: [Scan 10200] Robot at (-2.24, 23.13), Near H1: no, Near H2: no
+[INFO] [1764825777.792148803] [tb4_human_detector]: [Scan 10300] Robot at (2.46, 21.52), Near H1: no, Near H2: no
+[INFO] [1764825788.742626669] [tb4_human_detector]: [Scan 10400] Robot at (7.24, 20.16), Near H1: no, Near H2: no
+[INFO] [1764825799.634233591] [tb4_human_detector]: [Scan 10500] Robot at (8.27, 16.44), Near H1: no, Near H2: no
+[INFO] [1764825810.587264054] [tb4_human_detector]: [Scan 10600] Robot at (4.14, 14.46), Near H1: no, Near H2: no
+[INFO] [1764825821.441423087] [tb4_human_detector]: [Scan 10700] Robot at (-0.22, 12.00), Near H1: no, Near H2: no
+[INFO] [1764825832.315644092] [tb4_human_detector]: [Scan 10800] Robot at (-5.02, 10.90), Near H1: no, Near H2: no
+[INFO] [1764825843.094583708] [tb4_human_detector]: [Scan 10900] Robot at (-6.27, 7.65), Near H1: no, Near H2: no
+[INFO] [1764825849.217320961] [navigator]: Task Go to Pose got result
+[ERROR] [1764825849.217380628] [navigator]: Goal was achieved
+[Main] ✓ Reached WP41 at (-5.96495, 6.44215)
+[INFO] [1764825849.217468836] [tb4_human_detector]: [DEBUG] Scans: 10957, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 2961
+[Main] Navigating to Waypoint 42/84 (-1, 6.5)...
+[INFO] [1764825849.217490919] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825849.219191086] [navigator]: GoToPose request was accepted
+[INFO] [1764825853.881755922] [tb4_human_detector]: [Scan 11000] Robot at (-5.44, 6.49), Near H1: no, Near H2: no
+[INFO] [1764825864.603646843] [tb4_human_detector]: [Scan 11100] Robot at (-1.05, 6.50), Near H1: no, Near H2: no
+[INFO] [1764825865.809362052] [navigator]: Task Go to Pose got result
+[ERROR] [1764825865.809399927] [navigator]: Goal was achieved
+[Main] ✓ Reached WP42 at (-0.949569, 6.49889)
+[INFO] [1764825865.809479136] [tb4_human_detector]: [DEBUG] Scans: 11112, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 2966
+[Main] Navigating to Waypoint 43/84 (3.5, 6.5)...
+[INFO] [1764825865.809498677] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825865.811007344] [navigator]: GoToPose request was accepted
+[INFO] [1764825875.127022126] [tb4_human_detector]: [Scan 11200] Robot at (1.78, 6.53), Near H1: no, Near H2: no
+[INFO] [1764825881.013103378] [navigator]: Task Go to Pose got result
+[ERROR] [1764825881.013138670] [navigator]: Goal was achieved
+[Main] ✓ Reached WP43 at (3.72078, 6.53997)
+[INFO] [1764825881.013212753] [tb4_human_detector]: [DEBUG] Scans: 11256, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 2986
+[Main] Navigating to Waypoint 44/84 (8, 6.5)...
+[INFO] [1764825881.013224087] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825881.014071462] [navigator]: GoToPose request was accepted
+[INFO] [1764825885.689809297] [tb4_human_detector]: [Scan 11300] Robot at (4.08, 6.53), Near H1: no, Near H2: no
+[INFO] [1764825895.865432927] [navigator]: Task Go to Pose got result
+[ERROR] [1764825895.865460927] [navigator]: Goal was achieved
+[Main] ✓ Reached WP44 at (7.96251, 6.60874)
+[INFO] [1764825895.865537719] [tb4_human_detector]: [DEBUG] Scans: 11397, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3009
+[Main] Navigating to Waypoint 45/84 (13.5, 6.5)...
+[INFO] [1764825895.865559094] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825895.866776927] [navigator]: GoToPose request was accepted
+[INFO] [1764825896.288845594] [tb4_human_detector]: [Scan 11400] Robot at (7.97, 6.53), Near H1: no, Near H2: no
+[INFO] [1764825906.893009085] [tb4_human_detector]: [Scan 11500] Robot at (11.28, 6.65), Near H1: no, Near H2: no
+[INFO] [1764825914.320187922] [navigator]: Task Go to Pose got result
+[ERROR] [1764825914.320216130] [navigator]: Goal was achieved
+[Main] ✓ Reached WP45 at (13.5128, 6.58987)
+[INFO] [1764825914.320342630] [tb4_human_detector]: [DEBUG] Scans: 11571, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3021
+[Main] Navigating to Waypoint 46/84 (13.5, 4.5)...
+[INFO] [1764825914.320363797] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825914.320756880] [navigator]: GoToPose request was accepted
+[INFO] [1764825917.543945882] [tb4_human_detector]: [Scan 11600] Robot at (13.47, 6.62), Near H1: no, Near H2: no
+[INFO] [1764825928.243818012] [tb4_human_detector]: [Scan 11700] Robot at (8.72, 5.95), Near H1: no, Near H2: no
+[INFO] [1764825938.908916919] [tb4_human_detector]: [Scan 11800] Robot at (8.14, 3.42), Near H1: no, Near H2: no
+[INFO] [1764825949.540104008] [tb4_human_detector]: [Scan 11900] Robot at (12.83, 3.40), Near H1: no, Near H2: no
+[INFO] [1764825953.641538926] [navigator]: Task Go to Pose got result
+[ERROR] [1764825953.641642176] [navigator]: Goal was achieved
+[Main] ✓ Reached WP46 at (13.5732, 3.80328)
+[Main] Performing 360° scan...
+[INFO] [1764825953.641860510] [navigator]: Waiting for Spin action server
+[INFO] [1764825953.642583760] [navigator]: In task Spin response callback
+[INFO] [1764825953.642607093] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764825953.642794260] [navigator]: Spin request was accepted
+[INFO] [1764825955.545655844] [navigator]: Task Spin got result
+[ERROR] [1764825955.545745760] [navigator]: Goal was achieved
+[INFO] [1764825956.552186094] [tb4_human_detector]: [DEBUG] Scans: 11965, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3047
+[Main] Navigating to Waypoint 47/84 (10, 4.5)...
+[INFO] [1764825956.552385386] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825956.563972636] [navigator]: GoToPose request was accepted
+[INFO] [1764825960.527858263] [tb4_human_detector]: [Scan 12000] Robot at (13.64, 3.85), Near H1: no, Near H2: no
+[INFO] [1764825971.367779504] [tb4_human_detector]: [Scan 12100] Robot at (13.54, 4.22), Near H1: no, Near H2: no
+[INFO] [1764825976.402062089] [navigator]: Task Go to Pose got result
+[ERROR] [1764825976.402144381] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 47 - continuing to next...
+[Main] Navigating to Waypoint 48/84 (6, 4.5)...
+[INFO] [1764825976.402228589] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764825976.403020506] [navigator]: GoToPose request was accepted
+[INFO] [1764825982.193203050] [tb4_human_detector]: [Scan 12200] Robot at (13.61, 4.09), Near H1: no, Near H2: no
+[INFO] [1764825992.965279125] [tb4_human_detector]: [Scan 12300] Robot at (13.64, 3.59), Near H1: no, Near H2: no
+[INFO] [1764826003.840482088] [tb4_human_detector]: [Scan 12400] Robot at (11.65, 3.39), Near H1: no, Near H2: no
+[INFO] [1764826015.019181052] [tb4_human_detector]: [Scan 12500] Robot at (6.93, 3.85), Near H1: no, Near H2: no
+[INFO] [1764826018.699727345] [navigator]: Task Go to Pose got result
+[ERROR] [1764826018.699820679] [navigator]: Goal was achieved
+[Main] ✓ Reached WP48 at (5.99639, 4.41942)
+[INFO] [1764826018.699897054] [tb4_human_detector]: [DEBUG] Scans: 12535, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3066
+[Main] Navigating to Waypoint 49/84 (3.5, 7.5)...
+[INFO] [1764826018.699915304] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826018.701788512] [navigator]: GoToPose request was accepted
+[INFO] [1764826025.894369251] [tb4_human_detector]: [Scan 12600] Robot at (4.44, 6.31), Near H1: no, Near H2: no
+[INFO] [1764826030.026741586] [navigator]: Task Go to Pose got result
+[ERROR] [1764826030.027051753] [navigator]: Goal was achieved
+[Main] ✓ Reached WP49 at (3.14435, 7.2176)
+[INFO] [1764826030.027277086] [tb4_human_detector]: [DEBUG] Scans: 12638, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3078
+[Main] Navigating to Waypoint 50/84 (3.5, 9.5)...
+[INFO] [1764826030.027347586] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826030.027921711] [navigator]: GoToPose request was accepted
+[INFO] [1764826036.657294798] [tb4_human_detector]: [Scan 12700] Robot at (3.03, 7.29), Near H1: no, Near H2: no
+[INFO] [1764826047.319657970] [tb4_human_detector]: [Scan 12800] Robot at (3.41, 7.42), Near H1: no, Near H2: no
+[INFO] [1764826049.446725596] [navigator]: Task Go to Pose got result
+[ERROR] [1764826049.446789804] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 50 - continuing to next...
+[Main] Navigating to Waypoint 51/84 (3.5, 11.5)...
+[INFO] [1764826049.446922762] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826049.448624929] [navigator]: GoToPose request was accepted
+[INFO] [1764826058.123724335] [tb4_human_detector]: [Scan 12900] Robot at (1.27, 7.18), Near H1: no, Near H2: no
+[INFO] [1764826069.221541174] [tb4_human_detector]: [Scan 13000] Robot at (-3.57, 7.15), Near H1: no, Near H2: no
+[INFO] [1764826080.521246179] [tb4_human_detector]: [Scan 13100] Robot at (-6.37, 9.40), Near H1: no, Near H2: no
+[INFO] [1764826091.497778712] [tb4_human_detector]: [Scan 13200] Robot at (-3.13, 10.99), Near H1: no, Near H2: no
+[INFO] [1764826102.421975676] [tb4_human_detector]: [Scan 13300] Robot at (1.56, 11.39), Near H1: no, Near H2: no
+[INFO] [1764826109.010418804] [navigator]: Task Go to Pose got result
+[ERROR] [1764826109.010473387] [navigator]: Goal was achieved
+[Main] ✓ Reached WP51 at (3.51385, 11.6319)
+[INFO] [1764826109.010571304] [tb4_human_detector]: [DEBUG] Scans: 13360, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3117
+[Main] Navigating to Waypoint 52/84 (-1, 9)...
+[INFO] [1764826109.010592345] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826109.012430054] [navigator]: GoToPose request was accepted
+[INFO] [1764826113.396280625] [tb4_human_detector]: [Scan 13400] Robot at (3.64, 11.61), Near H1: no, Near H2: no
+[INFO] [1764826123.987790880] [tb4_human_detector]: [Scan 13500] Robot at (4.01, 11.56), Near H1: no, Near H2: no
+[INFO] [1764826128.441769257] [navigator]: Task Go to Pose got result
+[ERROR] [1764826128.441819465] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 52 - continuing to next...
+[Main] Navigating to Waypoint 53/84 (-6, 9)...
+[INFO] [1764826128.441892507] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826128.442618132] [navigator]: GoToPose request was accepted
+[INFO] [1764826134.999431885] [tb4_human_detector]: [Scan 13600] Robot at (2.64, 11.55), Near H1: no, Near H2: no
+[INFO] [1764826146.008943251] [tb4_human_detector]: [Scan 13700] Robot at (-2.27, 11.24), Near H1: no, Near H2: no
+[INFO] [1764826156.829937756] [tb4_human_detector]: [Scan 13800] Robot at (-6.46, 10.12), Near H1: no, Near H2: no
+[INFO] [1764826163.422614051] [navigator]: Task Go to Pose got result
+[ERROR] [1764826163.422657884] [navigator]: Goal was achieved
+[Main] ✓ Reached WP53 at (-6.02194, 9.13825)
+[INFO] [1764826163.422719884] [tb4_human_detector]: [DEBUG] Scans: 13862, Near H1: 158 (hits: 158), Near H2: 144 (hits: 140), Clusters: 3163
+[Main] Navigating to Waypoint 54/84 (-10.4, 10.5)...
+[INFO] [1764826163.422734218] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826163.423460343] [navigator]: GoToPose request was accepted
+[INFO] [1764826167.583214303] [tb4_human_detector]: [Scan 13900] Robot at (-6.00, 9.10), Near H1: no, Near H2: no
+[INFO] [1764826178.220097669] [tb4_human_detector]: [Scan 14000] Robot at (-5.97, 9.07), Near H1: no, Near H2: no
+[INFO] [1764826186.473016714] [navigator]: Task Go to Pose got result
+[ERROR] [1764826186.473059673] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 54 - continuing to next...
+[Main] Navigating to Waypoint 55/84 (-13, 10)...
+[INFO] [1764826186.473148714] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826186.474624756] [navigator]: GoToPose request was accepted
+[INFO] [1764826188.926055966] [tb4_human_detector]: [Scan 14100] Robot at (-5.99, 9.13), Near H1: no, Near H2: no
+[INFO] [1764826199.829918762] [tb4_human_detector]: [Scan 14200] Robot at (-4.11, 10.91), Near H1: no, Near H2: no
+[INFO] [1764826210.790715753] [tb4_human_detector]: [Scan 14300] Robot at (0.06, 12.91), Near H1: no, Near H2: no
+[INFO] [1764826221.745233884] [tb4_human_detector]: [Scan 14400] Robot at (4.50, 15.42), Near H1: no, Near H2: no
+[INFO] [1764826232.729009708] [tb4_human_detector]: [Scan 14500] Robot at (8.58, 16.90), Near H1: no, Near H2: no
+[INFO] [1764826243.671015880] [tb4_human_detector]: [Scan 14600] Robot at (6.66, 20.78), Near H1: no, Near H2: no
+[INFO] [1764826254.524269135] [tb4_human_detector]: [Scan 14700] Robot at (2.26, 23.09), Near H1: no, Near H2: no
+[INFO] [1764826265.511855959] [tb4_human_detector]: [Scan 14800] Robot at (-2.74, 23.63), Near H1: no, Near H2: no
+[INFO] [1764826276.419958006] [tb4_human_detector]: [Scan 14900] Robot at (-5.67, 21.30), Near H1: no, Near H2: no
+[INFO] [1764826287.227602220] [tb4_human_detector]: [Scan 15000] Robot at (-8.61, 22.99), Near H1: no, Near H2: no
+[INFO] [1764826298.191201960] [tb4_human_detector]: [Scan 15100] Robot at (-11.29, 21.46), Near H1: no, Near H2: no
+[INFO] [1764826309.075993341] [tb4_human_detector]: [Scan 15200] Robot at (-12.45, 16.78), Near H1: no, Near H2: YES
+[INFO] [1764826319.882949137] [tb4_human_detector]: [Scan 15300] Robot at (-12.92, 11.77), Near H1: no, Near H2: no
+[INFO] [1764826327.112229085] [navigator]: Task Go to Pose got result
+[ERROR] [1764826327.112280543] [navigator]: Goal was achieved
+[Main] ✓ Reached WP55 at (-13.0127, 9.92992)
+[INFO] [1764826327.112353502] [tb4_human_detector]: [DEBUG] Scans: 15368, Near H1: 158 (hits: 158), Near H2: 218 (hits: 205), Clusters: 3193
+[Main] Navigating to Waypoint 56/84 (-13, 14)...
+[INFO] [1764826327.112372877] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826327.113788168] [navigator]: GoToPose request was accepted
+[INFO] [1764826330.638362420] [tb4_human_detector]: [Scan 15400] Robot at (-13.03, 11.14), Near H1: no, Near H2: no
+[INFO] [1764826336.625778131] [navigator]: Task Go to Pose got result
+[ERROR] [1764826336.625808089] [navigator]: Goal was achieved
+[Main] ✓ Reached WP56 at (-13.0047, 13.6763)
+[Main] Performing 360° scan...
+[INFO] [1764826336.625862173] [navigator]: Waiting for Spin action server
+[INFO] [1764826336.628342423] [navigator]: In task Spin response callback
+[INFO] [1764826336.628444089] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764826336.628521881] [navigator]: Spin request was accepted
+[INFO] [1764826338.655181757] [navigator]: Task Spin got result
+[ERROR] [1764826338.655236549] [navigator]: Goal was achieved
+[INFO] [1764826339.656046258] [tb4_human_detector]: [DEBUG] Scans: 15484, Near H1: 158 (hits: 158), Near H2: 257 (hits: 244), Clusters: 3193
+[Main] Navigating to Waypoint 57/84 (-10.4, 14.75)...
+[INFO] [1764826339.656101049] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826339.656585966] [navigator]: GoToPose request was accepted
+[INFO] [1764826341.377108800] [tb4_human_detector]: [Scan 15500] Robot at (-12.99, 13.86), Near H1: no, Near H2: YES
+[INFO] [1764826351.993422055] [tb4_human_detector]: [Scan 15600] Robot at (-13.04, 14.02), Near H1: no, Near H2: YES
+[INFO] [1764826359.378106586] [navigator]: Task Go to Pose got result
+[ERROR] [1764826359.378187503] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 57 - continuing to next...
+[Main] Navigating to Waypoint 58/84 (-6, 14)...
+[INFO] [1764826359.378261378] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826359.380261878] [navigator]: GoToPose request was accepted
+[INFO] [1764826362.724321963] [tb4_human_detector]: [Scan 15700] Robot at (-12.97, 14.36), Near H1: no, Near H2: YES
+[INFO] [1764826373.749070468] [tb4_human_detector]: [Scan 15800] Robot at (-12.19, 19.27), Near H1: no, Near H2: no
+[INFO] [1764826384.657889417] [tb4_human_detector]: [Scan 15900] Robot at (-10.53, 23.72), Near H1: no, Near H2: no
+[INFO] [1764826395.642701422] [tb4_human_detector]: [Scan 16000] Robot at (-7.99, 20.87), Near H1: no, Near H2: no
+[INFO] [1764826406.595189136] [tb4_human_detector]: [Scan 16100] Robot at (-5.00, 23.42), Near H1: no, Near H2: no
+[INFO] [1764826417.513643002] [tb4_human_detector]: [Scan 16200] Robot at (-0.75, 22.48), Near H1: no, Near H2: no
+[INFO] [1764826428.477656340] [tb4_human_detector]: [Scan 16300] Robot at (4.04, 21.01), Near H1: no, Near H2: no
+[INFO] [1764826439.463002887] [tb4_human_detector]: [Scan 16400] Robot at (8.47, 19.55), Near H1: no, Near H2: no
+[INFO] [1764826450.434189670] [tb4_human_detector]: [Scan 16500] Robot at (6.98, 16.15), Near H1: no, Near H2: no
+[INFO] [1764826461.337948425] [tb4_human_detector]: [Scan 16600] Robot at (2.15, 15.50), Near H1: no, Near H2: no
+[INFO] [1764826472.257655222] [tb4_human_detector]: [Scan 16700] Robot at (-2.83, 14.68), Near H1: no, Near H2: no
+[INFO] [1764826481.200096504] [navigator]: Task Go to Pose got result
+[ERROR] [1764826481.200681337] [navigator]: Goal was achieved
+[Main] ✓ Reached WP58 at (-6.02952, 14.0895)
+[INFO] [1764826481.200760629] [tb4_human_detector]: [DEBUG] Scans: 16784, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3238
+[Main] Navigating to Waypoint 59/84 (-1, 14)...
+[INFO] [1764826481.200772920] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826481.203358920] [navigator]: GoToPose request was accepted
+[INFO] [1764826483.060409463] [tb4_human_detector]: [Scan 16800] Robot at (-6.05, 13.95), Near H1: no, Near H2: no
+[INFO] [1764826493.790065260] [tb4_human_detector]: [Scan 16900] Robot at (-1.83, 14.07), Near H1: no, Near H2: no
+[INFO] [1764826497.853829470] [navigator]: Task Go to Pose got result
+[ERROR] [1764826497.854004345] [navigator]: Goal was achieved
+[Main] ✓ Reached WP59 at (-1.1016, 14.1894)
+[INFO] [1764826497.854119386] [tb4_human_detector]: [DEBUG] Scans: 16938, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3240
+[Main] Navigating to Waypoint 60/84 (3, 14)...
+[INFO] [1764826497.854174470] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826497.855347428] [navigator]: GoToPose request was accepted
+[INFO] [1764826504.651560542] [tb4_human_detector]: [Scan 17000] Robot at (0.23, 14.18), Near H1: no, Near H2: no
+[INFO] [1764826513.313765963] [navigator]: Task Go to Pose got result
+[ERROR] [1764826513.313803296] [navigator]: Goal was achieved
+[Main] ✓ Reached WP60 at (3.09082, 14.0882)
+[INFO] [1764826513.313879630] [tb4_human_detector]: [DEBUG] Scans: 17081, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3245
+[Main] Navigating to Waypoint 61/84 (7, 14)...
+[INFO] [1764826513.313897338] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826513.314518713] [navigator]: GoToPose request was accepted
+[INFO] [1764826515.392595131] [tb4_human_detector]: [Scan 17100] Robot at (3.05, 14.00), Near H1: no, Near H2: no
+[INFO] [1764826526.081622052] [tb4_human_detector]: [Scan 17200] Robot at (6.95, 14.07), Near H1: no, Near H2: no
+[INFO] [1764826527.325830970] [navigator]: Task Go to Pose got result
+[ERROR] [1764826527.325935220] [navigator]: Goal was achieved
+[Main] ✓ Reached WP61 at (7.1216, 14.134)
+[Main] Performing 360° scan...
+[INFO] [1764826527.326017595] [navigator]: Waiting for Spin action server
+[INFO] [1764826527.326623178] [navigator]: In task Spin response callback
+[INFO] [1764826527.326642803] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764826527.326726553] [navigator]: Spin request was accepted
+[INFO] [1764826529.228087595] [navigator]: Task Spin got result
+[ERROR] [1764826529.228123470] [navigator]: Goal was achieved
+[INFO] [1764826530.228456054] [tb4_human_detector]: [DEBUG] Scans: 17239, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3255
+[Main] Navigating to Waypoint 62/84 (7, 17)...
+[INFO] [1764826530.228519554] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826530.229436554] [navigator]: GoToPose request was accepted
+[INFO] [1764826536.798499043] [tb4_human_detector]: [Scan 17300] Robot at (6.53, 15.74), Near H1: no, Near H2: no
+[INFO] [1764826539.601766794] [navigator]: Task Go to Pose got result
+[ERROR] [1764826539.601806086] [navigator]: Goal was achieved
+[Main] ✓ Reached WP62 at (6.88122, 16.4929)
+[INFO] [1764826539.601978378] [tb4_human_detector]: [DEBUG] Scans: 17327, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3255
+[Main] Navigating to Waypoint 63/84 (3, 17)...
+[INFO] [1764826539.602008419] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826539.604801003] [navigator]: GoToPose request was accepted
+[INFO] [1764826547.632458215] [tb4_human_detector]: [Scan 17400] Robot at (6.01, 16.23), Near H1: no, Near H2: no
+[INFO] [1764826558.410943762] [tb4_human_detector]: [Scan 17500] Robot at (2.94, 16.39), Near H1: no, Near H2: no
+[INFO] [1764826559.430658012] [navigator]: Task Go to Pose got result
+[ERROR] [1764826559.430716262] [navigator]: Goal was achieved
+[Main] ✓ Reached WP63 at (2.87713, 16.4991)
+[INFO] [1764826559.430799012] [tb4_human_detector]: [DEBUG] Scans: 17510, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3256
+[Main] Navigating to Waypoint 64/84 (-1.3, 17)...
+[INFO] [1764826559.430820762] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826559.436332054] [navigator]: GoToPose request was accepted
+[INFO] [1764826569.269356169] [tb4_human_detector]: [Scan 17600] Robot at (1.51, 16.25), Near H1: no, Near H2: no
+[INFO] [1764826578.657404007] [navigator]: Task Go to Pose got result
+[ERROR] [1764826578.657447465] [navigator]: Goal was achieved
+[Main] ✓ Reached WP64 at (-1.31975, 16.4348)
+[INFO] [1764826578.657512424] [tb4_human_detector]: [DEBUG] Scans: 17688, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3256
+[Main] Navigating to Waypoint 65/84 (-1.3, 18.5)...
+[INFO] [1764826578.657525965] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826578.658268465] [navigator]: GoToPose request was accepted
+[INFO] [1764826579.974048299] [tb4_human_detector]: [Scan 17700] Robot at (-1.37, 16.56), Near H1: no, Near H2: no
+[INFO] [1764826590.806704846] [tb4_human_detector]: [Scan 17800] Robot at (-1.32, 16.61), Near H1: no, Near H2: no
+[INFO] [1764826598.494478294] [navigator]: Task Go to Pose got result
+[ERROR] [1764826598.495350919] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 65 - continuing to next...
+[Main] Navigating to Waypoint 66/84 (-1.3, 20)...
+[INFO] [1764826598.495436461] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826598.497556961] [navigator]: GoToPose request was accepted
+[INFO] [1764826601.655446670] [tb4_human_detector]: [Scan 17900] Robot at (-0.54, 16.24), Near H1: no, Near H2: no
+[INFO] [1764826612.666447592] [tb4_human_detector]: [Scan 18000] Robot at (4.14, 16.20), Near H1: no, Near H2: no
+[INFO] [1764826623.576921417] [tb4_human_detector]: [Scan 18100] Robot at (8.62, 16.83), Near H1: no, Near H2: no
+[INFO] [1764826634.506394213] [tb4_human_detector]: [Scan 18200] Robot at (6.71, 20.05), Near H1: no, Near H2: no
+[INFO] [1764826645.405253469] [tb4_human_detector]: [Scan 18300] Robot at (1.89, 20.12), Near H1: no, Near H2: no
+[INFO] [1764826654.760314084] [navigator]: Task Go to Pose got result
+[ERROR] [1764826654.760367375] [navigator]: Goal was achieved
+[Main] ✓ Reached WP66 at (-1.42575, 20.1236)
+[INFO] [1764826654.760453000] [tb4_human_detector]: [DEBUG] Scans: 18387, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3274
+[Main] Navigating to Waypoint 67/84 (3, 20)...
+[INFO] [1764826654.760471459] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826654.763601500] [navigator]: GoToPose request was accepted
+[INFO] [1764826656.219119876] [tb4_human_detector]: [Scan 18400] Robot at (-1.43, 20.00), Near H1: no, Near H2: no
+[INFO] [1764826667.029420965] [tb4_human_detector]: [Scan 18500] Robot at (2.38, 20.13), Near H1: no, Near H2: no
+[INFO] [1764826670.948276133] [navigator]: Task Go to Pose got result
+[ERROR] [1764826670.948311008] [navigator]: Goal was achieved
+[Main] ✓ Reached WP67 at (3.07878, 20.0544)
+[INFO] [1764826670.948355508] [tb4_human_detector]: [DEBUG] Scans: 18537, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3280
+[Main] Navigating to Waypoint 68/84 (7, 20)...
+[INFO] [1764826670.948365050] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826670.949588966] [navigator]: GoToPose request was accepted
+[INFO] [1764826677.805840095] [tb4_human_detector]: [Scan 18600] Robot at (4.83, 20.10), Near H1: no, Near H2: no
+[INFO] [1764826684.741240959] [navigator]: Task Go to Pose got result
+[ERROR] [1764826684.741274500] [navigator]: Goal was achieved
+[Main] ✓ Reached WP68 at (7.01968, 20.128)
+[INFO] [1764826684.741346542] [tb4_human_detector]: [DEBUG] Scans: 18665, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3281
+[Main] Navigating to Waypoint 69/84 (-4, 21.5)...
+[INFO] [1764826684.741357500] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826684.742262125] [navigator]: GoToPose request was accepted
+[INFO] [1764826688.643511169] [tb4_human_detector]: [Scan 18700] Robot at (6.64, 20.46), Near H1: no, Near H2: no
+[INFO] [1764826699.600869258] [tb4_human_detector]: [Scan 18800] Robot at (2.19, 22.75), Near H1: no, Near H2: no
+[INFO] [1764826710.510695388] [tb4_human_detector]: [Scan 18900] Robot at (-2.61, 23.60), Near H1: no, Near H2: no
+[INFO] [1764826721.376616754] [tb4_human_detector]: [Scan 19000] Robot at (-4.95, 21.83), Near H1: no, Near H2: no
+[INFO] [1764826725.812569797] [navigator]: Task Go to Pose got result
+[ERROR] [1764826725.812608047] [navigator]: Goal was achieved
+[Main] ✓ Reached WP69 at (-4.39362, 21.6395)
+[INFO] [1764826725.812663214] [tb4_human_detector]: [DEBUG] Scans: 19041, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3285
+[Main] Navigating to Waypoint 70/84 (-7, 21.5)...
+[INFO] [1764826725.812672839] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826725.815809172] [navigator]: GoToPose request was accepted
+[INFO] [1764826732.187482925] [tb4_human_detector]: [Scan 19100] Robot at (-4.98, 21.46), Near H1: no, Near H2: no
+[INFO] [1764826740.794605221] [navigator]: Task Go to Pose got result
+[ERROR] [1764826740.794673888] [navigator]: Goal was achieved
+[Main] ✓ Reached WP70 at (-7.03177, 20.8929)
+[INFO] [1764826740.794771471] [tb4_human_detector]: [DEBUG] Scans: 19180, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3285
+[Main] Navigating to Waypoint 71/84 (-10, 21.5)...
+[INFO] [1764826740.794791596] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826740.795868471] [navigator]: GoToPose request was accepted
+[INFO] [1764826742.978091166] [tb4_human_detector]: [Scan 19200] Robot at (-7.11, 20.72), Near H1: no, Near H2: no
+[INFO] [1764826753.818372546] [tb4_human_detector]: [Scan 19300] Robot at (-8.47, 22.46), Near H1: no, Near H2: no
+[INFO] [1764826764.685845593] [tb4_human_detector]: [Scan 19400] Robot at (-11.02, 22.28), Near H1: no, Near H2: no
+[INFO] [1764826771.541706763] [navigator]: Task Go to Pose got result
+[ERROR] [1764826771.541763722] [navigator]: Goal was achieved
+[Main] ✓ Reached WP71 at (-10.4764, 21.7647)
+[INFO] [1764826771.541849763] [tb4_human_detector]: [DEBUG] Scans: 19464, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3291
+[Main] Navigating to Waypoint 72/84 (-12, 18)...
+[INFO] [1764826771.541864222] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826771.543677805] [navigator]: GoToPose request was accepted
+[INFO] [1764826775.503778542] [tb4_human_detector]: [Scan 19500] Robot at (-10.72, 21.69), Near H1: no, Near H2: no
+[INFO] [1764826786.293604756] [tb4_human_detector]: [Scan 19600] Robot at (-12.04, 18.04), Near H1: no, Near H2: no
+[INFO] [1764826788.545092007] [navigator]: Task Go to Pose got result
+[ERROR] [1764826788.545230215] [navigator]: Goal was achieved
+[Main] ✓ Reached WP72 at (-12.1296, 17.8707)
+[INFO] [1764826788.545328090] [tb4_human_detector]: [DEBUG] Scans: 19621, Near H1: 158 (hits: 158), Near H2: 526 (hits: 513), Clusters: 3297
+[Main] Navigating to Waypoint 73/84 (-12, 15)...
+[INFO] [1764826788.545339799] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826788.545939257] [navigator]: GoToPose request was accepted
+[INFO] [1764826797.084300219] [tb4_human_detector]: [Scan 19700] Robot at (-12.45, 16.35), Near H1: no, Near H2: YES
+[INFO] [1764826807.849347669] [tb4_human_detector]: [Scan 19800] Robot at (-12.30, 15.61), Near H1: no, Near H2: YES
+[INFO] [1764826818.628403257] [tb4_human_detector]: [Scan 19900] Robot at (-12.87, 15.20), Near H1: no, Near H2: YES
+[INFO] [1764826828.294497470] [navigator]: Task Go to Pose got result
+[ERROR] [1764826828.294579178] [navigator]: Goal was achieved
+[Main] ✓ Reached WP73 at (-12.1555, 14.7089)
+[Main] Performing 360° scan...
+[INFO] [1764826828.294675803] [navigator]: Waiting for Spin action server
+[INFO] [1764826828.297565845] [navigator]: In task Spin response callback
+[INFO] [1764826828.297594678] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764826828.297656470] [navigator]: Spin request was accepted
+[INFO] [1764826829.371516054] [tb4_human_detector]: [Scan 20000] Robot at (-12.11, 14.72), Near H1: no, Near H2: YES
+[INFO] [1764826830.115989304] [navigator]: Task Spin got result
+[ERROR] [1764826830.116024804] [navigator]: Goal was achieved
+[INFO] [1764826831.116769680] [tb4_human_detector]: [DEBUG] Scans: 20017, Near H1: 158 (hits: 158), Near H2: 875 (hits: 862), Clusters: 3297
+[Main] Navigating to Waypoint 74/84 (-8, 15)...
+[INFO] [1764826831.116882096] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826831.121559096] [navigator]: GoToPose request was accepted
+[INFO] [1764826840.228458586] [tb4_human_detector]: [Scan 20100] Robot at (-12.69, 16.52), Near H1: no, Near H2: YES
+[INFO] [1764826851.214257967] [tb4_human_detector]: [Scan 20200] Robot at (-11.54, 21.44), Near H1: no, Near H2: no
+[INFO] [1764826862.291013639] [tb4_human_detector]: [Scan 20300] Robot at (-8.88, 23.37), Near H1: no, Near H2: no
+[INFO] [1764826873.261223421] [tb4_human_detector]: [Scan 20400] Robot at (-6.22, 20.80), Near H1: no, Near H2: no
+[INFO] [1764826884.224081676] [tb4_human_detector]: [Scan 20500] Robot at (-3.43, 23.65), Near H1: no, Near H2: no
+[INFO] [1764826895.252450376] [tb4_human_detector]: [Scan 20600] Robot at (1.15, 21.94), Near H1: no, Near H2: no
+[INFO] [1764826906.220748881] [tb4_human_detector]: [Scan 20700] Robot at (5.93, 20.53), Near H1: no, Near H2: no
+[INFO] [1764826917.311545178] [tb4_human_detector]: [Scan 20800] Robot at (8.63, 17.43), Near H1: no, Near H2: no
+[INFO] [1764826928.401519627] [tb4_human_detector]: [Scan 20900] Robot at (4.89, 16.10), Near H1: no, Near H2: no
+[INFO] [1764826939.374062757] [tb4_human_detector]: [Scan 21000] Robot at (-0.00, 16.06), Near H1: no, Near H2: no
+[INFO] [1764826950.327899304] [tb4_human_detector]: [Scan 21100] Robot at (-5.20, 16.00), Near H1: no, Near H2: no
+[INFO] [1764826961.215514878] [tb4_human_detector]: [Scan 21200] Robot at (-8.42, 15.75), Near H1: no, Near H2: no
+[INFO] [1764826971.997211384] [tb4_human_detector]: [Scan 21300] Robot at (-8.08, 15.07), Near H1: no, Near H2: no
+[INFO] [1764826973.764411718] [navigator]: Task Go to Pose got result
+[ERROR] [1764826973.764485509] [navigator]: Goal was achieved
+[Main] ✓ Reached WP74 at (-7.99411, 15.0883)
+[INFO] [1764826973.764599676] [tb4_human_detector]: [DEBUG] Scans: 21317, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3309
+[Main] Navigating to Waypoint 75/84 (-7, 23.6)...
+[INFO] [1764826973.764626718] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764826973.766073051] [navigator]: GoToPose request was accepted
+[INFO] [1764826982.930546458] [tb4_human_detector]: [Scan 21400] Robot at (-8.43, 15.53), Near H1: no, Near H2: no
+[INFO] [1764826993.849381296] [tb4_human_detector]: [Scan 21500] Robot at (-3.95, 16.17), Near H1: no, Near H2: no
+[INFO] [1764827004.728253302] [tb4_human_detector]: [Scan 21600] Robot at (0.76, 16.17), Near H1: no, Near H2: no
+[INFO] [1764827015.670216584] [tb4_human_detector]: [Scan 21700] Robot at (5.93, 16.20), Near H1: no, Near H2: no
+[INFO] [1764827026.630616923] [tb4_human_detector]: [Scan 21800] Robot at (8.59, 18.53), Near H1: no, Near H2: no
+[INFO] [1764827037.610098970] [tb4_human_detector]: [Scan 21900] Robot at (5.25, 21.63), Near H1: no, Near H2: no
+[INFO] [1764827048.591877961] [tb4_human_detector]: [Scan 22000] Robot at (0.60, 23.59), Near H1: no, Near H2: no
+[INFO] [1764827059.449214132] [tb4_human_detector]: [Scan 22100] Robot at (-4.29, 23.70), Near H1: no, Near H2: no
+[INFO] [1764827070.293654554] [tb4_human_detector]: [Scan 22200] Robot at (-6.95, 20.57), Near H1: no, Near H2: no
+[INFO] [1764827081.109207420] [tb4_human_detector]: [Scan 22300] Robot at (-7.92, 23.33), Near H1: no, Near H2: no
+[INFO] [1764827087.281167506] [navigator]: Task Go to Pose got result
+[ERROR] [1764827087.281263298] [navigator]: Goal was achieved
+[Main] ✓ Reached WP75 at (-7.56993, 23.727)
+[INFO] [1764827087.281382298] [tb4_human_detector]: [DEBUG] Scans: 22358, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3313
+[Main] Navigating to Waypoint 76/84 (-4, 23)...
+[INFO] [1764827087.281412965] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827087.287184965] [navigator]: GoToPose request was accepted
+[INFO] [1764827091.972327175] [tb4_human_detector]: [Scan 22400] Robot at (-7.90, 23.63), Near H1: no, Near H2: no
+[INFO] [1764827102.872716305] [tb4_human_detector]: [Scan 22500] Robot at (-6.44, 20.74), Near H1: no, Near H2: no
+[INFO] [1764827113.656986505] [tb4_human_detector]: [Scan 22600] Robot at (-4.79, 23.60), Near H1: no, Near H2: no
+[INFO] [1764827122.690611134] [navigator]: Task Go to Pose got result
+[ERROR] [1764827122.690654592] [navigator]: Goal was achieved
+[Main] ✓ Reached WP76 at (-3.96263, 23.2854)
+[Main] Performing 360° scan...
+[INFO] [1764827122.690720217] [navigator]: Waiting for Spin action server
+[INFO] [1764827122.691315551] [navigator]: In task Spin response callback
+[INFO] [1764827122.691334759] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764827122.691384259] [navigator]: Spin request was accepted
+[INFO] [1764827124.358107551] [tb4_human_detector]: [Scan 22700] Robot at (-3.93, 23.21), Near H1: no, Near H2: no
+[INFO] [1764827124.592565343] [navigator]: Task Spin got result
+[ERROR] [1764827124.592619593] [navigator]: Goal was achieved
+[INFO] [1764827125.593078594] [tb4_human_detector]: [DEBUG] Scans: 22712, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3317
+[Main] Navigating to Waypoint 77/84 (0, 23)...
+[INFO] [1764827125.593140344] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827125.594325260] [navigator]: GoToPose request was accepted
+[INFO] [1764827135.157933376] [tb4_human_detector]: [Scan 22800] Robot at (-1.60, 23.45), Near H1: no, Near H2: no
+[INFO] [1764827141.249016253] [navigator]: Task Go to Pose got result
+[ERROR] [1764827141.249054295] [navigator]: Goal was achieved
+[Main] ✓ Reached WP77 at (0.114542, 23.1147)
+[INFO] [1764827141.249124920] [tb4_human_detector]: [DEBUG] Scans: 22857, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3318
+[Main] Navigating to Waypoint 78/84 (4, 23)...
+[INFO] [1764827141.249135003] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827141.250916045] [navigator]: GoToPose request was accepted
+[INFO] [1764827145.887180172] [tb4_human_detector]: [Scan 22900] Robot at (0.46, 23.09), Near H1: no, Near H2: no
+[INFO] [1764827156.211992761] [navigator]: Task Go to Pose got result
+[ERROR] [1764827156.212042594] [navigator]: Goal was achieved
+[Main] ✓ Reached WP78 at (4.09284, 23.0858)
+[INFO] [1764827156.212104511] [tb4_human_detector]: [DEBUG] Scans: 22996, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3318
+[Main] Navigating to Waypoint 79/84 (8, 23)...
+[INFO] [1764827156.212116469] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827156.213179427] [navigator]: GoToPose request was accepted
+[INFO] [1764827156.670523844] [tb4_human_detector]: [Scan 23000] Robot at (4.05, 23.02), Near H1: no, Near H2: no
+[INFO] [1764827167.425915377] [tb4_human_detector]: [Scan 23100] Robot at (7.57, 23.12), Near H1: no, Near H2: no
+[INFO] [1764827170.784456420] [navigator]: Task Go to Pose got result
+[ERROR] [1764827170.784493087] [navigator]: Goal was achieved
+[Main] ✓ Reached WP79 at (7.98754, 23.0932)
+[INFO] [1764827170.784546420] [tb4_human_detector]: [DEBUG] Scans: 23131, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3321
+[Main] Navigating to Waypoint 80/84 (13, 20)...
+[INFO] [1764827170.784555878] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827170.785558753] [navigator]: GoToPose request was accepted
+[INFO] [1764827178.240815090] [tb4_human_detector]: [Scan 23200] Robot at (9.27, 22.24), Near H1: no, Near H2: no
+[INFO] [1764827188.985453095] [tb4_human_detector]: [Scan 23300] Robot at (12.97, 20.05), Near H1: no, Near H2: no
+[INFO] [1764827191.021152638] [navigator]: Task Go to Pose got result
+[ERROR] [1764827191.021195971] [navigator]: Goal was achieved
+[Main] ✓ Reached WP80 at (13.1585, 19.9648)
+[INFO] [1764827191.021257680] [tb4_human_detector]: [DEBUG] Scans: 23319, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3352
+[Main] Navigating to Waypoint 81/84 (13, 15)...
+[INFO] [1764827191.021270263] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827191.022018513] [navigator]: GoToPose request was accepted
+[INFO] [1764827199.748623128] [tb4_human_detector]: [Scan 23400] Robot at (13.08, 18.29), Near H1: no, Near H2: no
+[INFO] [1764827210.422778675] [tb4_human_detector]: [Scan 23500] Robot at (12.95, 15.90), Near H1: no, Near H2: no
+[INFO] [1764827221.103601971] [tb4_human_detector]: [Scan 23600] Robot at (13.00, 14.97), Near H1: no, Near H2: no
+[INFO] [1764827221.374884096] [navigator]: Task Go to Pose got result
+[ERROR] [1764827221.374945388] [navigator]: Goal was achieved
+[Main] ✓ Reached WP81 at (13.0093, 15.0091)
+[INFO] [1764827221.375091305] [tb4_human_detector]: [DEBUG] Scans: 23603, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3367
+[Main] Navigating to Waypoint 82/84 (13, 10)...
+[INFO] [1764827221.375130555] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827221.376305638] [navigator]: GoToPose request was accepted
+[INFO] [1764827231.934315670] [tb4_human_detector]: [Scan 23700] Robot at (12.94, 12.82), Near H1: no, Near H2: no
+[INFO] [1764827242.748495634] [tb4_human_detector]: [Scan 23800] Robot at (12.90, 10.80), Near H1: no, Near H2: no
+[INFO] [1764827253.547929250] [tb4_human_detector]: [Scan 23900] Robot at (13.02, 9.96), Near H1: no, Near H2: no
+[INFO] [1764827254.957808792] [navigator]: Task Go to Pose got result
+[ERROR] [1764827254.957845667] [navigator]: Goal was achieved
+[Main] ✓ Reached WP82 at (12.9686, 9.98652)
+[INFO] [1764827254.957908375] [tb4_human_detector]: [DEBUG] Scans: 23914, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3382
+[Main] Navigating to Waypoint 83/84 (-13, 20)...
+[INFO] [1764827254.957919292] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827254.958380459] [navigator]: GoToPose request was accepted
+[INFO] [1764827264.452586338] [tb4_human_detector]: [Scan 24000] Robot at (12.65, 11.81), Near H1: no, Near H2: no
+[INFO] [1764827275.226878093] [tb4_human_detector]: [Scan 24100] Robot at (10.36, 16.32), Near H1: no, Near H2: no
+[INFO] [1764827286.154965501] [tb4_human_detector]: [Scan 24200] Robot at (7.52, 20.30), Near H1: no, Near H2: no
+[INFO] [1764827297.090107298] [tb4_human_detector]: [Scan 24300] Robot at (3.07, 22.79), Near H1: no, Near H2: no
+[INFO] [1764827308.034475595] [tb4_human_detector]: [Scan 24400] Robot at (-1.69, 23.72), Near H1: no, Near H2: no
+[INFO] [1764827318.931834377] [tb4_human_detector]: [Scan 24500] Robot at (-5.36, 22.22), Near H1: no, Near H2: no
+[INFO] [1764827329.886354091] [tb4_human_detector]: [Scan 24600] Robot at (-8.18, 21.61), Near H1: no, Near H2: no
+[INFO] [1764827340.752472679] [tb4_human_detector]: [Scan 24700] Robot at (-11.15, 22.97), Near H1: no, Near H2: no
+[INFO] [1764827351.537057129] [tb4_human_detector]: [Scan 24800] Robot at (-13.05, 19.94), Near H1: no, Near H2: no
+[INFO] [1764827351.702307795] [navigator]: Task Go to Pose got result
+[ERROR] [1764827351.702369629] [navigator]: Goal was achieved
+[Main] ✓ Reached WP83 at (-13.0747, 19.9542)
+[INFO] [1764827351.704781754] [tb4_human_detector]: [DEBUG] Scans: 24802, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3383
+[Main] Navigating to Waypoint 84/84 (-13, 23)...
+[INFO] [1764827351.704878629] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827351.710936462] [navigator]: GoToPose request was accepted
+[INFO] [1764827359.020032174] [navigator]: Task Go to Pose got result
+[ERROR] [1764827359.020107716] [navigator]: Goal was achieved
+[Main] ✓ Reached WP84 at (-13.0892, 22.6284)
+[INFO] [1764827359.020185424] [tb4_human_detector]: [DEBUG] Scans: 24870, Near H1: 158 (hits: 158), Near H2: 966 (hits: 953), Clusters: 3383
+
+[Main] ========================================
+[Main] Warehouse scan complete!
+[Main] Generating detection report...
+[Main] ========================================
+
+[INFO] [1764827359.020199966] [tb4_human_detector]: ==========================================
+[INFO] [1764827359.020202382] [tb4_human_detector]:         HUMAN DETECTION REPORT            
+[INFO] [1764827359.020204424] [tb4_human_detector]: ==========================================
+[INFO] [1764827359.020206257] [tb4_human_detector]: Total scans: 24870
+[INFO] [1764827359.020208216] [tb4_human_detector]: Scans near H1 position: 158 (hits in 158 scans)
+[INFO] [1764827359.020211382] [tb4_human_detector]: Scans near H2 position: 966 (hits in 953 scans)
+[INFO] [1764827359.020213424] [tb4_human_detector]: H1 hit ratio when close: 1.00
+[INFO] [1764827359.020215882] [tb4_human_detector]: H2 hit ratio when close: 0.99
+[INFO] [1764827359.020218174] [tb4_human_detector]: [Human 1] STILL at original (1.00, -1.00) ✓
+[INFO] [1764827359.020220674] [tb4_human_detector]: [Human 2] STILL at original (-12.00, 15.00) ✓
+[INFO] [1764827359.020223299] [tb4_human_detector]: Both humans at original locations.
+
+
+(For Human 1 who has moved to (5,3))
+(.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+[INFO] [1764827554.117846583] [tb4_human_detector]: HumanDetector initialized.
+[INFO] [1764827554.174927250] [navigator]: Created instance of Navigator
+[Main] Waiting for map...
+[WARN] [1764827554.177004042] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+[WARN] [1764827554.519727500] [tb4_human_detector]: TF lookup failed: "map" passed to lookupTransform argument target_frame does not exist. 
+[INFO] [1764827554.738496459] [tb4_human_detector]: Map received: 1006x1674, resolution: 0.030
+[Main] Map received!
+[INFO] [1764827556.781635710] [tb4_human_detector]: Detection counters reset.
+[INFO] [1764827556.781676585] [navigator]: Inside SetInitialPose
+[INFO] [1764827556.781748085] [navigator]: Waiting for Nav2 to activate...
+[INFO] [1764827556.781754626] [navigator]: Waiting for amcl
+[INFO] [1764827556.786642293] [navigator]: amcl active
+[INFO] [1764827556.794786793] [navigator]: acml is ready
+[INFO] [1764827556.794840460] [navigator]: Waiting for initial pose
+[INFO] [1764827556.895582960] [navigator]: initial pose is received
+[INFO] [1764827556.895628418] [navigator]: Waiting for bt_navigator
+[INFO] [1764827556.898865876] [navigator]: bt_navigator active
+[INFO] [1764827556.901130960] [navigator]: bt_navigator is ready
+[INFO] [1764827556.901153168] [navigator]: Nav2 is ready!
+[Main] Creating optimized warehouse coverage pattern...
+[Main] Coverage pattern has 84 waypoints for complete warehouse scan
+[Main] 360° scan at WP15 (intersection)
+[Main] 360° scan at WP20 (H1 original)
+[Main] 360° scan at WP27 (H1 original)
+[Main] 360° scan at WP30 (intersection)
+[Main] 360° scan at WP33 (H1 new location)
+[Main] 360° scan at WP45 (intersection)
+[Main] 360° scan at WP55 (H2 original)
+[Main] 360° scan at WP60 (intersection)
+[Main] 360° scan at WP72 (H2 original)
+[Main] 360° scan at WP75 (intersection)
+[Main] Navigating to Waypoint 1/84 (2, -20)...
+[INFO] [1764827556.901222918] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827556.902777543] [navigator]: GoToPose request was accepted
+[INFO] [1764827557.550839502] [tb4_human_detector]: [Scan 0] Robot at (2.12, -21.25), Near H1: no, Near H2: no
+[INFO] [1764827560.144707836] [navigator]: Task Go to Pose got result
+[ERROR] [1764827560.144740836] [navigator]: Goal was achieved
+[Main] ✓ Reached WP1 at (2.10295, -20.4481)
+[INFO] [1764827560.144818128] [tb4_human_detector]: [DEBUG] Scans: 25, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 58
+[Main] Navigating to Waypoint 2/84 (6, -18)...
+[INFO] [1764827560.144839753] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827560.145372628] [navigator]: GoToPose request was accepted
+[INFO] [1764827568.294259257] [tb4_human_detector]: [Scan 100] Robot at (2.15, -20.15), Near H1: no, Near H2: no
+[INFO] [1764827578.979601054] [tb4_human_detector]: [Scan 200] Robot at (2.40, -20.10), Near H1: no, Near H2: no
+[INFO] [1764827579.370549595] [navigator]: Task Go to Pose got result
+[ERROR] [1764827579.370605095] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 2 - continuing to next...
+[Main] Navigating to Waypoint 3/84 (10, -16)...
+[INFO] [1764827579.370688720] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827579.372061679] [navigator]: GoToPose request was accepted
+[INFO] [1764827590.038932128] [tb4_human_detector]: [Scan 300] Robot at (5.40, -22.68), Near H1: no, Near H2: no
+[INFO] [1764827600.932075716] [tb4_human_detector]: [Scan 400] Robot at (8.41, -20.48), Near H1: no, Near H2: no
+[INFO] [1764827610.979181138] [navigator]: Task Go to Pose got result
+[ERROR] [1764827610.979289388] [navigator]: Goal was achieved
+[Main] ✓ Reached WP3 at (9.88299, -16.2196)
+[INFO] [1764827610.979493888] [tb4_human_detector]: [DEBUG] Scans: 493, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 338
+[Main] Navigating to Waypoint 4/84 (13, -18)...
+[INFO] [1764827610.979679721] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827610.984032471] [navigator]: GoToPose request was accepted
+[INFO] [1764827611.762867680] [tb4_human_detector]: [Scan 500] Robot at (9.90, -16.15), Near H1: no, Near H2: no
+[INFO] [1764827622.407661337] [tb4_human_detector]: [Scan 600] Robot at (12.70, -17.81), Near H1: no, Near H2: no
+[INFO] [1764827625.633387381] [navigator]: Task Go to Pose got result
+[ERROR] [1764827625.633423006] [navigator]: Goal was achieved
+[Main] ✓ Reached WP4 at (13.0206, -17.9883)
+[INFO] [1764827625.633493422] [tb4_human_detector]: [DEBUG] Scans: 631, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 359
+[Main] Navigating to Waypoint 5/84 (13, -21)...
+[INFO] [1764827625.633505047] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827625.633985589] [navigator]: GoToPose request was accepted
+[INFO] [1764827633.169387926] [tb4_human_detector]: [Scan 700] Robot at (11.99, -18.93), Near H1: no, Near H2: no
+[INFO] [1764827643.952663208] [tb4_human_detector]: [Scan 800] Robot at (11.59, -22.07), Near H1: no, Near H2: no
+[INFO] [1764827651.522696129] [navigator]: Task Go to Pose got result
+[ERROR] [1764827651.522740212] [navigator]: Goal was achieved
+[Main] ✓ Reached WP5 at (12.9025, -21.6584)
+[INFO] [1764827651.522846795] [tb4_human_detector]: [DEBUG] Scans: 871, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 472
+[Main] Navigating to Waypoint 6/84 (6.5, -13)...
+[INFO] [1764827651.522858004] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827651.523544129] [navigator]: GoToPose request was accepted
+[INFO] [1764827654.698503547] [tb4_human_detector]: [Scan 900] Robot at (12.93, -21.60), Near H1: no, Near H2: no
+[INFO] [1764827665.299551010] [tb4_human_detector]: [Scan 1000] Robot at (13.20, -21.55), Near H1: no, Near H2: no
+[INFO] [1764827671.346673346] [navigator]: Task Go to Pose got result
+[ERROR] [1764827671.346714346] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 6 - continuing to next...
+[Main] Navigating to Waypoint 7/84 (3, -13)...
+[INFO] [1764827671.346766846] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827671.349458638] [navigator]: GoToPose request was accepted
+[INFO] [1764827676.076853459] [tb4_human_detector]: [Scan 1100] Robot at (12.31, -22.07), Near H1: no, Near H2: no
+[INFO] [1764827687.020012006] [tb4_human_detector]: [Scan 1200] Robot at (7.57, -22.74), Near H1: no, Near H2: no
+[INFO] [1764827697.927832636] [tb4_human_detector]: [Scan 1300] Robot at (4.07, -20.97), Near H1: no, Near H2: no
+[INFO] [1764827708.820445877] [tb4_human_detector]: [Scan 1400] Robot at (3.55, -16.16), Near H1: no, Near H2: no
+[INFO] [1764827715.511046630] [navigator]: Task Go to Pose got result
+[ERROR] [1764827715.511106255] [navigator]: Goal was achieved
+[Main] ✓ Reached WP7 at (3.06519, -13.3438)
+[INFO] [1764827715.511187297] [tb4_human_detector]: [DEBUG] Scans: 1462, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 500
+[Main] Navigating to Waypoint 8/84 (-1.5, -13)...
+[INFO] [1764827715.511213505] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827715.514342839] [navigator]: GoToPose request was accepted
+[INFO] [1764827719.554546966] [tb4_human_detector]: [Scan 1500] Robot at (3.09, -13.30), Near H1: no, Near H2: no
+[INFO] [1764827730.216699262] [tb4_human_detector]: [Scan 1600] Robot at (3.41, -13.19), Near H1: no, Near H2: no
+[INFO] [1764827735.346204251] [navigator]: Task Go to Pose got result
+[ERROR] [1764827735.346337251] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 8 - continuing to next...
+[Main] Navigating to Waypoint 9/84 (-5, -13)...
+[INFO] [1764827735.346445667] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827735.347606917] [navigator]: GoToPose request was accepted
+[INFO] [1764827741.038845295] [tb4_human_detector]: [Scan 1700] Robot at (3.05, -11.93), Near H1: no, Near H2: no
+[INFO] [1764827751.834082592] [tb4_human_detector]: [Scan 1800] Robot at (2.33, -9.40), Near H1: no, Near H2: no
+[INFO] [1764827762.658187430] [tb4_human_detector]: [Scan 1900] Robot at (1.45, -7.01), Near H1: no, Near H2: no
+[INFO] [1764827773.422359213] [tb4_human_detector]: [Scan 2000] Robot at (0.37, -4.63), Near H1: no, Near H2: no
+[INFO] [1764827784.239443426] [tb4_human_detector]: [Scan 2100] Robot at (-0.15, -3.91), Near H1: no, Near H2: no
+[INFO] [1764827795.055908167] [tb4_human_detector]: [Scan 2200] Robot at (-3.61, -3.51), Near H1: no, Near H2: no
+[INFO] [1764827806.111425047] [tb4_human_detector]: [Scan 2300] Robot at (-4.34, -8.13), Near H1: no, Near H2: no
+[INFO] [1764827817.343596844] [tb4_human_detector]: [Scan 2400] Robot at (-4.90, -12.72), Near H1: no, Near H2: no
+[INFO] [1764827821.327255346] [navigator]: Task Go to Pose got result
+[ERROR] [1764827821.327496305] [navigator]: Goal was achieved
+[Main] ✓ Reached WP9 at (-4.99406, -13.1176)
+[INFO] [1764827821.327676055] [tb4_human_detector]: [DEBUG] Scans: 2437, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1138
+[Main] Navigating to Waypoint 10/84 (-8.5, -13)...
+[INFO] [1764827821.327710721] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827821.330723721] [navigator]: GoToPose request was accepted
+[INFO] [1764827828.273828044] [tb4_human_detector]: [Scan 2500] Robot at (-4.96, -13.08), Near H1: no, Near H2: no
+[INFO] [1764827839.207533174] [tb4_human_detector]: [Scan 2600] Robot at (-4.65, -12.84), Near H1: no, Near H2: no
+[INFO] [1764827841.392833300] [navigator]: Task Go to Pose got result
+[ERROR] [1764827841.392955383] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 10 - continuing to next...
+[Main] Navigating to Waypoint 11/84 (-11, -13)...
+[INFO] [1764827841.393141967] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827841.395355925] [navigator]: GoToPose request was accepted
+[INFO] [1764827850.414710888] [tb4_human_detector]: [Scan 2700] Robot at (-5.04, -11.45), Near H1: no, Near H2: no
+[INFO] [1764827861.592447712] [tb4_human_detector]: [Scan 2800] Robot at (-5.51, -9.11), Near H1: no, Near H2: no
+[INFO] [1764827872.843111301] [tb4_human_detector]: [Scan 2900] Robot at (-6.04, -6.72), Near H1: no, Near H2: no
+[INFO] [1764827884.054355833] [tb4_human_detector]: [Scan 3000] Robot at (-6.85, -4.46), Near H1: no, Near H2: no
+[INFO] [1764827895.356847714] [tb4_human_detector]: [Scan 3100] Robot at (-7.37, -3.37), Near H1: no, Near H2: no
+[INFO] [1764827906.640617844] [tb4_human_detector]: [Scan 3200] Robot at (-10.88, -4.45), Near H1: no, Near H2: no
+[INFO] [1764827917.982954044] [tb4_human_detector]: [Scan 3300] Robot at (-10.89, -9.33), Near H1: no, Near H2: no
+[INFO] [1764827929.010740215] [tb4_human_detector]: [Scan 3400] Robot at (-11.11, -12.63), Near H1: no, Near H2: no
+[INFO] [1764827930.076702424] [navigator]: Task Go to Pose got result
+[ERROR] [1764827930.076836383] [navigator]: Goal was achieved
+[Main] ✓ Reached WP11 at (-11.044, -13.3104)
+[INFO] [1764827930.077073341] [tb4_human_detector]: [DEBUG] Scans: 3410, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1480
+[Main] Navigating to Waypoint 12/84 (-11, -8)...
+[INFO] [1764827930.077120133] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827930.079615799] [navigator]: GoToPose request was accepted
+[INFO] [1764827940.181877971] [tb4_human_detector]: [Scan 3500] Robot at (-11.07, -9.23), Near H1: no, Near H2: no
+[INFO] [1764827942.455933764] [navigator]: Task Go to Pose got result
+[ERROR] [1764827942.455975764] [navigator]: Goal was achieved
+[Main] ✓ Reached WP12 at (-11.1727, -8.35199)
+[INFO] [1764827942.456090472] [tb4_human_detector]: [DEBUG] Scans: 3521, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1503
+[Main] Navigating to Waypoint 13/84 (-6, -8)...
+[INFO] [1764827942.456112055] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827942.456743180] [navigator]: GoToPose request was accepted
+[INFO] [1764827951.167016712] [tb4_human_detector]: [Scan 3600] Robot at (-10.87, -4.57), Near H1: no, Near H2: no
+[INFO] [1764827962.104891550] [tb4_human_detector]: [Scan 3700] Robot at (-7.71, -3.24), Near H1: no, Near H2: no
+[INFO] [1764827973.043187583] [tb4_human_detector]: [Scan 3800] Robot at (-6.23, -7.44), Near H1: no, Near H2: no
+[INFO] [1764827977.686242210] [navigator]: Task Go to Pose got result
+[ERROR] [1764827977.686292502] [navigator]: Goal was achieved
+[Main] ✓ Reached WP13 at (-5.97051, -8.04885)
+[INFO] [1764827977.686380877] [tb4_human_detector]: [DEBUG] Scans: 3842, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1559
+[Main] Navigating to Waypoint 14/84 (-1, -8)...
+[INFO] [1764827977.686401335] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764827977.687303002] [navigator]: GoToPose request was accepted
+[INFO] [1764827984.314989005] [tb4_human_detector]: [Scan 3900] Robot at (-5.00, -5.80), Near H1: no, Near H2: no
+[INFO] [1764827995.440509135] [tb4_human_detector]: [Scan 4000] Robot at (-1.80, -3.16), Near H1: no, Near H2: no
+[INFO] [1764828006.238495376] [tb4_human_detector]: [Scan 4100] Robot at (-0.14, -6.51), Near H1: no, Near H2: no
+[INFO] [1764828015.010231130] [navigator]: Task Go to Pose got result
+[ERROR] [1764828015.010288964] [navigator]: Goal was achieved
+[Main] ✓ Reached WP14 at (-0.653306, -7.8337)
+[INFO] [1764828015.010413505] [tb4_human_detector]: [DEBUG] Scans: 4182, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1638
+[Main] Navigating to Waypoint 15/84 (4, -8)...
+[INFO] [1764828015.010440339] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828015.012662839] [navigator]: GoToPose request was accepted
+[INFO] [1764828017.032000006] [tb4_human_detector]: [Scan 4200] Robot at (-0.66, -7.90), Near H1: no, Near H2: no
+[INFO] [1764828027.672032386] [tb4_human_detector]: [Scan 4300] Robot at (3.73, -7.95), Near H1: no, Near H2: no
+[INFO] [1764828030.383479013] [navigator]: Task Go to Pose got result
+[ERROR] [1764828030.383540638] [navigator]: Goal was achieved
+[Main] ✓ Reached WP15 at (4.0468, -8.02048)
+[INFO] [1764828030.383717846] [tb4_human_detector]: [DEBUG] Scans: 4326, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1660
+[Main] Navigating to Waypoint 16/84 (9, -8)...
+[INFO] [1764828030.383762388] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828030.384574221] [navigator]: GoToPose request was accepted
+[INFO] [1764828038.417004294] [tb4_human_detector]: [Scan 4400] Robot at (4.12, -4.80), Near H1: no, Near H2: no
+[INFO] [1764828049.197906382] [tb4_human_detector]: [Scan 4500] Robot at (7.30, -3.19), Near H1: no, Near H2: no
+[INFO] [1764828059.876018721] [tb4_human_detector]: [Scan 4600] Robot at (8.75, -7.49), Near H1: no, Near H2: no
+[INFO] [1764828064.140505042] [navigator]: Task Go to Pose got result
+[ERROR] [1764828064.140757125] [navigator]: Goal was achieved
+[Main] ✓ Reached WP16 at (9.04175, -8.06318)
+[Main] Performing 360° scan...
+[INFO] [1764828064.140849833] [navigator]: Waiting for Spin action server
+[INFO] [1764828064.141952125] [navigator]: In task Spin response callback
+[INFO] [1764828064.141979292] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764828064.142061333] [navigator]: Spin request was accepted
+[INFO] [1764828066.046127209] [navigator]: Task Spin got result
+[ERROR] [1764828066.046216584] [navigator]: Goal was achieved
+[INFO] [1764828067.047176626] [tb4_human_detector]: [DEBUG] Scans: 4668, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1781
+[Main] Navigating to Waypoint 17/84 (13, -8)...
+[INFO] [1764828067.047234335] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828067.048081626] [navigator]: GoToPose request was accepted
+[INFO] [1764828070.617605586] [tb4_human_detector]: [Scan 4700] Robot at (9.64, -8.05), Near H1: no, Near H2: no
+[INFO] [1764828081.233732425] [tb4_human_detector]: [Scan 4800] Robot at (11.94, -8.17), Near H1: no, Near H2: no
+[INFO] [1764828091.549892888] [navigator]: Task Go to Pose got result
+[ERROR] [1764828091.549929055] [navigator]: Goal was achieved
+[Main] ✓ Reached WP17 at (12.9515, -7.90952)
+[INFO] [1764828091.550006430] [tb4_human_detector]: [DEBUG] Scans: 4897, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1792
+[Main] Navigating to Waypoint 18/84 (13, -5.5)...
+[INFO] [1764828091.550029680] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828091.551377555] [navigator]: GoToPose request was accepted
+[INFO] [1764828091.933970888] [tb4_human_detector]: [Scan 4900] Robot at (12.94, -7.95), Near H1: no, Near H2: no
+[INFO] [1764828097.418874543] [navigator]: Task Go to Pose got result
+[ERROR] [1764828097.418979793] [navigator]: Goal was achieved
+[Main] ✓ Reached WP18 at (12.9311, -6.11225)
+[INFO] [1764828097.419060210] [tb4_human_detector]: [DEBUG] Scans: 4951, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1793
+[Main] Navigating to Waypoint 19/84 (10, -3)...
+[INFO] [1764828097.419074960] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828097.419822460] [navigator]: GoToPose request was accepted
+[INFO] [1764828102.811970046] [tb4_human_detector]: [Scan 5000] Robot at (11.90, -4.63), Near H1: no, Near H2: no
+[INFO] [1764828109.572005632] [navigator]: Task Go to Pose got result
+[ERROR] [1764828109.572121299] [navigator]: Goal was achieved
+[Main] ✓ Reached WP19 at (9.93576, -2.97247)
+[INFO] [1764828109.572212341] [tb4_human_detector]: [DEBUG] Scans: 5064, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1811
+[Main] Navigating to Waypoint 20/84 (5, -3)...
+[INFO] [1764828109.572223007] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828109.573705049] [navigator]: GoToPose request was accepted
+[INFO] [1764828113.469150634] [tb4_human_detector]: [Scan 5100] Robot at (9.52, -2.98), Near H1: no, Near H2: no
+[INFO] [1764828124.101912958] [tb4_human_detector]: [Scan 5200] Robot at (5.11, -2.95), Near H1: no, Near H2: no
+[INFO] [1764828125.139680834] [navigator]: Task Go to Pose got result
+[ERROR] [1764828125.139722209] [navigator]: Goal was achieved
+[Main] ✓ Reached WP20 at (4.99918, -2.78741)
+[INFO] [1764828125.139774459] [tb4_human_detector]: [DEBUG] Scans: 5210, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1819
+[Main] Navigating to Waypoint 21/84 (0.4, -2)...
+[INFO] [1764828125.139784709] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828125.141764376] [navigator]: GoToPose request was accepted
+[INFO] [1764828134.563216213] [tb4_human_detector]: [Scan 5300] Robot at (4.92, -2.79), Near H1: no, Near H2: no
+[INFO] [1764828144.362715718] [navigator]: Task Go to Pose got result
+[ERROR] [1764828144.362761551] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 21 - continuing to next...
+[Main] Navigating to Waypoint 22/84 (-4, -3)...
+[INFO] [1764828144.362817551] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828144.366405260] [navigator]: GoToPose request was accepted
+[INFO] [1764828145.011295427] [tb4_human_detector]: [Scan 5400] Robot at (5.20, -2.71), Near H1: no, Near H2: no
+[INFO] [1764828155.785068126] [tb4_human_detector]: [Scan 5500] Robot at (2.05, -3.01), Near H1: no, Near H2: no
+[INFO] [1764828166.395121714] [tb4_human_detector]: [Scan 5600] Robot at (-2.85, -3.08), Near H1: no, Near H2: no
+[INFO] [1764828170.438119924] [navigator]: Task Go to Pose got result
+[ERROR] [1764828170.438184466] [navigator]: Goal was achieved
+[Main] ✓ Reached WP22 at (-3.98012, -2.8526)
+[INFO] [1764828170.438268674] [tb4_human_detector]: [DEBUG] Scans: 5638, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1878
+[Main] Navigating to Waypoint 23/84 (-9, -3)...
+[INFO] [1764828170.438292966] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828170.439108091] [navigator]: GoToPose request was accepted
+[INFO] [1764828177.391985678] [tb4_human_detector]: [Scan 5700] Robot at (-5.62, -2.72), Near H1: no, Near H2: no
+[INFO] [1764828187.853067835] [navigator]: Task Go to Pose got result
+[ERROR] [1764828187.853193418] [navigator]: Goal was achieved
+[Main] ✓ Reached WP23 at (-9.06232, -2.89687)
+[INFO] [1764828187.853369002] [tb4_human_detector]: [DEBUG] Scans: 5794, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1911
+[Main] Navigating to Waypoint 24/84 (-13, -3)...
+[INFO] [1764828187.853416252] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828187.855349543] [navigator]: GoToPose request was accepted
+[INFO] [1764828188.576604502] [tb4_human_detector]: [Scan 5800] Robot at (-9.04, -3.03), Near H1: no, Near H2: no
+[INFO] [1764828199.668288549] [tb4_human_detector]: [Scan 5900] Robot at (-12.40, -3.05), Near H1: no, Near H2: no
+[INFO] [1764828203.248519967] [navigator]: Task Go to Pose got result
+[ERROR] [1764828203.248565634] [navigator]: Goal was achieved
+[Main] ✓ Reached WP24 at (-13.0333, -2.91744)
+[INFO] [1764828203.248685551] [tb4_human_detector]: [DEBUG] Scans: 5933, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1937
+[Main] Navigating to Waypoint 25/84 (-13, 0)...
+[INFO] [1764828203.248713384] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828203.249333926] [navigator]: GoToPose request was accepted
+[INFO] [1764828210.332253513] [navigator]: Task Go to Pose got result
+[ERROR] [1764828210.332287929] [navigator]: Goal was achieved
+[Main] ✓ Reached WP25 at (-13.0246, -0.388025)
+[INFO] [1764828210.332368554] [tb4_human_detector]: [DEBUG] Scans: 5997, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1975
+[Main] Navigating to Waypoint 26/84 (-9, 0)...
+[INFO] [1764828210.332416638] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828210.333185388] [navigator]: GoToPose request was accepted
+[INFO] [1764828210.756774054] [tb4_human_detector]: [Scan 6000] Robot at (-13.00, -0.18), Near H1: no, Near H2: no
+[INFO] [1764828221.823351379] [tb4_human_detector]: [Scan 6100] Robot at (-9.39, 0.03), Near H1: no, Near H2: no
+[INFO] [1764828224.888622463] [navigator]: Task Go to Pose got result
+[ERROR] [1764828224.888682297] [navigator]: Goal was achieved
+[Main] ✓ Reached WP26 at (-8.89486, -0.0154065)
+[INFO] [1764828224.888780922] [tb4_human_detector]: [DEBUG] Scans: 6128, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 1986
+[Main] Navigating to Waypoint 27/84 (-4, 0)...
+[INFO] [1764828224.888807963] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828224.890094422] [navigator]: GoToPose request was accepted
+[INFO] [1764828233.072002301] [tb4_human_detector]: [Scan 6200] Robot at (-8.08, -0.88), Near H1: no, Near H2: no
+[INFO] [1764828244.139128333] [tb4_human_detector]: [Scan 6300] Robot at (-3.97, -0.16), Near H1: no, Near H2: no
+[INFO] [1764828244.323030458] [navigator]: Task Go to Pose got result
+[ERROR] [1764828244.323071458] [navigator]: Goal was achieved
+[Main] ✓ Reached WP27 at (-3.90765, -0.19163)
+[INFO] [1764828244.323133417] [tb4_human_detector]: [DEBUG] Scans: 6302, Near H1: 0 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2027
+[Main] Navigating to Waypoint 28/84 (1, 0)...
+[INFO] [1764828244.323171000] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828244.325242417] [navigator]: GoToPose request was accepted
+[INFO] [1764828254.947444547] [tb4_human_detector]: [Scan 6400] Robot at (-0.81, -0.08), Near H1: no, Near H2: no
+[INFO] [1764828260.919069175] [navigator]: Task Go to Pose got result
+[ERROR] [1764828260.919108883] [navigator]: Goal was achieved
+[Main] ✓ Reached WP28 at (0.964698, 0.160915)
+[Main] Performing 360° scan...
+[INFO] [1764828260.919186091] [navigator]: Waiting for Spin action server
+[INFO] [1764828260.920006716] [navigator]: In task Spin response callback
+[INFO] [1764828260.920019633] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764828260.920061883] [navigator]: Spin request was accepted
+[INFO] [1764828262.942824926] [navigator]: Task Spin got result
+[ERROR] [1764828262.942878426] [navigator]: Goal was achieved
+[INFO] [1764828263.943922134] [tb4_human_detector]: [DEBUG] Scans: 6485, Near H1: 84 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2058
+[Main] Navigating to Waypoint 29/84 (5, 0)...
+[INFO] [1764828263.944059259] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828263.945883926] [navigator]: GoToPose request was accepted
+[INFO] [1764828265.604523969] [tb4_human_detector]: [Scan 6500] Robot at (1.30, 0.12), Near H1: YES, Near H2: no
+[INFO] [1764828276.241801293] [tb4_human_detector]: [Scan 6600] Robot at (3.50, 0.06), Near H1: no, Near H2: no
+[INFO] [1764828286.815399298] [tb4_human_detector]: [Scan 6700] Robot at (4.88, 0.01), Near H1: no, Near H2: no
+[INFO] [1764828288.057906923] [navigator]: Task Go to Pose got result
+[ERROR] [1764828288.057939548] [navigator]: Goal was achieved
+[Main] ✓ Reached WP29 at (4.90935, 0.0720397)
+[INFO] [1764828288.058008965] [tb4_human_detector]: [DEBUG] Scans: 6712, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2094
+[Main] Navigating to Waypoint 30/84 (10, 0)...
+[INFO] [1764828288.058019340] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828288.058814798] [navigator]: GoToPose request was accepted
+[INFO] [1764828297.431947678] [tb4_human_detector]: [Scan 6800] Robot at (7.06, -0.95), Near H1: no, Near H2: no
+[INFO] [1764828305.910588418] [navigator]: Task Go to Pose got result
+[ERROR] [1764828305.910721251] [navigator]: Goal was achieved
+[Main] ✓ Reached WP30 at (10.0143, 0.0716037)
+[INFO] [1764828305.910938376] [tb4_human_detector]: [DEBUG] Scans: 6881, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2167
+[Main] Navigating to Waypoint 31/84 (14, 0)...
+[INFO] [1764828305.910953126] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828305.911748709] [navigator]: GoToPose request was accepted
+[INFO] [1764828307.924038377] [tb4_human_detector]: [Scan 6900] Robot at (9.99, 0.03), Near H1: no, Near H2: no
+[INFO] [1764828318.496860674] [tb4_human_detector]: [Scan 7000] Robot at (13.95, 0.10), Near H1: no, Near H2: no
+[INFO] [1764828320.262798216] [navigator]: Task Go to Pose got result
+[ERROR] [1764828320.262934758] [navigator]: Goal was achieved
+[Main] ✓ Reached WP31 at (14.04, 0.0681818)
+[Main] Performing 360° scan...
+[INFO] [1764828320.263850341] [navigator]: Waiting for Spin action server
+[INFO] [1764828320.267816799] [navigator]: In task Spin response callback
+[INFO] [1764828320.268047383] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764828320.268104924] [navigator]: Spin request was accepted
+[INFO] [1764828322.285800800] [navigator]: Task Spin got result
+[ERROR] [1764828322.285834425] [navigator]: Goal was achieved
+[INFO] [1764828323.288358759] [tb4_human_detector]: [DEBUG] Scans: 7046, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2258
+[Main] Navigating to Waypoint 32/84 (14, 3)...
+[INFO] [1764828323.288423342] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828323.289714884] [navigator]: GoToPose request was accepted
+[INFO] [1764828329.020329220] [tb4_human_detector]: [Scan 7100] Robot at (14.01, 1.29), Near H1: no, Near H2: no
+[INFO] [1764828332.399841389] [navigator]: Task Go to Pose got result
+[ERROR] [1764828332.399877805] [navigator]: Goal was achieved
+[Main] ✓ Reached WP32 at (14.01, 2.66703)
+[INFO] [1764828332.399994389] [tb4_human_detector]: [DEBUG] Scans: 7132, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2268
+[Main] Navigating to Waypoint 33/84 (10, 3)...
+[INFO] [1764828332.400008264] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828332.401209764] [navigator]: GoToPose request was accepted
+[INFO] [1764828339.744291211] [tb4_human_detector]: [Scan 7200] Robot at (12.46, 2.94), Near H1: no, Near H2: no
+[INFO] [1764828346.965197048] [navigator]: Task Go to Pose got result
+[ERROR] [1764828346.965245756] [navigator]: Goal was achieved
+[Main] ✓ Reached WP33 at (9.98341, 3.0613)
+[INFO] [1764828346.965308631] [tb4_human_detector]: [DEBUG] Scans: 7269, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2275
+[Main] Navigating to Waypoint 34/84 (5, 3)...
+[INFO] [1764828346.965473714] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828346.967516714] [navigator]: GoToPose request was accepted
+[INFO] [1764828350.348987508] [tb4_human_detector]: [Scan 7300] Robot at (9.86, 3.07), Near H1: no, Near H2: no
+[INFO] [1764828360.951490846] [tb4_human_detector]: [Scan 7400] Robot at (5.74, 2.62), Near H1: no, Near H2: no
+[INFO] [1764828368.220100460] [navigator]: Task Go to Pose got result
+[ERROR] [1764828368.220202085] [navigator]: Goal was achieved
+[Main] ✓ Reached WP34 at (5.01249, 2.53046)
+[Main] Performing 360° scan...
+[INFO] [1764828368.220374335] [navigator]: Waiting for Spin action server
+[INFO] [1764828368.221219877] [navigator]: In task Spin response callback
+[INFO] [1764828368.221267294] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764828368.221384669] [navigator]: Spin request was accepted
+[INFO] [1764828370.321567920] [navigator]: Task Spin got result
+[ERROR] [1764828370.321598170] [navigator]: Goal was achieved
+[INFO] [1764828371.322357420] [tb4_human_detector]: [DEBUG] Scans: 7499, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2303
+[Main] Navigating to Waypoint 35/84 (1, 3)...
+[INFO] [1764828371.322440045] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828371.323129628] [navigator]: GoToPose request was accepted
+[INFO] [1764828371.511394212] [tb4_human_detector]: [Scan 7500] Robot at (5.09, 2.61), Near H1: no, Near H2: no
+[INFO] [1764828382.038385467] [tb4_human_detector]: [Scan 7600] Robot at (1.11, 2.89), Near H1: no, Near H2: no
+[INFO] [1764828383.453081676] [navigator]: Task Go to Pose got result
+[ERROR] [1764828383.453122759] [navigator]: Goal was achieved
+[Main] ✓ Reached WP35 at (0.970111, 3.03129)
+[INFO] [1764828383.453178093] [tb4_human_detector]: [DEBUG] Scans: 7614, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2318
+[Main] Navigating to Waypoint 36/84 (-4, 3)...
+[INFO] [1764828383.453191384] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828383.454131718] [navigator]: GoToPose request was accepted
+[INFO] [1764828392.557465389] [tb4_human_detector]: [Scan 7700] Robot at (-1.63, 3.10), Near H1: no, Near H2: no
+[INFO] [1764828399.859101003] [navigator]: Task Go to Pose got result
+[ERROR] [1764828399.859144711] [navigator]: Goal was achieved
+[Main] ✓ Reached WP36 at (-4.01431, 3.21389)
+[INFO] [1764828399.860052586] [tb4_human_detector]: [DEBUG] Scans: 7769, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2374
+[Main] Navigating to Waypoint 37/84 (-9, 3)...
+[INFO] [1764828399.860063211] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828399.861149211] [navigator]: GoToPose request was accepted
+[INFO] [1764828403.275389046] [tb4_human_detector]: [Scan 7800] Robot at (-4.07, 3.19), Near H1: no, Near H2: no
+[INFO] [1764828414.054724801] [tb4_human_detector]: [Scan 7900] Robot at (-8.73, 3.08), Near H1: no, Near H2: no
+[INFO] [1764828416.651181261] [navigator]: Task Go to Pose got result
+[ERROR] [1764828416.651252052] [navigator]: Goal was achieved
+[Main] ✓ Reached WP37 at (-9.03786, 3.18001)
+[INFO] [1764828416.651371052] [tb4_human_detector]: [DEBUG] Scans: 7924, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2407
+[Main] Navigating to Waypoint 38/84 (-12.85, 4.85)...
+[INFO] [1764828416.651409052] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828416.652519427] [navigator]: GoToPose request was accepted
+[INFO] [1764828424.906430792] [tb4_human_detector]: [Scan 8000] Robot at (-11.50, 3.85), Near H1: no, Near H2: no
+[INFO] [1764828432.274206921] [navigator]: Task Go to Pose got result
+[ERROR] [1764828432.274260087] [navigator]: Goal was achieved
+[Main] ✓ Reached WP38 at (-12.8428, 3.93659)
+[INFO] [1764828432.274329421] [tb4_human_detector]: [DEBUG] Scans: 8069, Near H1: 160 (hits: 0), Near H2: 0 (hits: 0), Clusters: 2453
+[Main] Navigating to Waypoint 39/84 (-14, 6.5)...
+[INFO] [1764828432.274345046] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828432.275967462] [navigator]: GoToPose request was accepted
+[INFO] [1764828435.725376214] [tb4_human_detector]: [Scan 8100] Robot at (-12.93, 3.80), Near H1: no, Near H2: no
+[INFO] [1764828446.719828594] [tb4_human_detector]: [Scan 8200] Robot at (-9.25, 4.64), Near H1: no, Near H2: no
+[INFO] [1764828457.734161210] [tb4_human_detector]: [Scan 8300] Robot at (-7.96, 8.95), Near H1: no, Near H2: no
+[INFO] [1764828468.718358299] [tb4_human_detector]: [Scan 8400] Robot at (-3.93, 10.96), Near H1: no, Near H2: no
+[INFO] [1764828479.687167637] [tb4_human_detector]: [Scan 8500] Robot at (0.30, 13.05), Near H1: no, Near H2: no
+[INFO] [1764828490.893612003] [tb4_human_detector]: [Scan 8600] Robot at (4.76, 15.47), Near H1: no, Near H2: no
+[INFO] [1764828502.191924259] [tb4_human_detector]: [Scan 8700] Robot at (8.55, 17.38), Near H1: no, Near H2: no
+[INFO] [1764828513.936220417] [tb4_human_detector]: [Scan 8800] Robot at (6.31, 20.97), Near H1: no, Near H2: no
+[INFO] [1764828525.283946047] [tb4_human_detector]: [Scan 8900] Robot at (1.75, 23.23), Near H1: no, Near H2: no
+[INFO] [1764828536.521673011] [tb4_human_detector]: [Scan 9000] Robot at (-3.28, 23.71), Near H1: no, Near H2: no
+[INFO] [1764828547.749529418] [tb4_human_detector]: [Scan 9100] Robot at (-5.81, 21.02), Near H1: no, Near H2: no
+[INFO] [1764828558.797966674] [tb4_human_detector]: [Scan 9200] Robot at (-8.70, 23.26), Near H1: no, Near H2: no
+[INFO] [1764828569.830553846] [tb4_human_detector]: [Scan 9300] Robot at (-11.28, 21.23), Near H1: no, Near H2: no
+[INFO] [1764828580.909755545] [tb4_human_detector]: [Scan 9400] Robot at (-12.54, 16.42), Near H1: no, Near H2: YES
+[INFO] [1764828591.860693175] [tb4_human_detector]: [Scan 9500] Robot at (-12.86, 11.55), Near H1: no, Near H2: no
+[INFO] [1764828602.656617097] [tb4_human_detector]: [Scan 9600] Robot at (-12.72, 6.87), Near H1: no, Near H2: no
+[INFO] [1764828613.388599213] [tb4_human_detector]: [Scan 9700] Robot at (-12.87, 6.64), Near H1: no, Near H2: no
+[INFO] [1764828624.171780385] [tb4_human_detector]: [Scan 9800] Robot at (-13.16, 6.54), Near H1: no, Near H2: no
+[INFO] [1764828634.892328750] [tb4_human_detector]: [Scan 9900] Robot at (-13.15, 6.52), Near H1: no, Near H2: no
+[INFO] [1764828645.626465172] [tb4_human_detector]: [Scan 10000] Robot at (-13.40, 6.70), Near H1: no, Near H2: no
+[INFO] [1764828656.380958261] [tb4_human_detector]: [Scan 10100] Robot at (-13.59, 5.95), Near H1: no, Near H2: no
+[INFO] [1764828659.095641220] [navigator]: Task Go to Pose got result
+[ERROR] [1764828659.095761054] [navigator]: Goal was achieved
+[Main] ✓ Reached WP39 at (-13.917, 6.19663)
+[INFO] [1764828659.095911012] [tb4_human_detector]: [DEBUG] Scans: 10126, Near H1: 160 (hits: 0), Near H2: 78 (hits: 78), Clusters: 2874
+[Main] Navigating to Waypoint 40/84 (-10.4, 6.5)...
+[INFO] [1764828659.095942762] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828659.098567220] [navigator]: GoToPose request was accepted
+[INFO] [1764828667.039812210] [tb4_human_detector]: [Scan 10200] Robot at (-13.87, 6.21), Near H1: no, Near H2: no
+[INFO] [1764828677.719842506] [tb4_human_detector]: [Scan 10300] Robot at (-13.88, 6.20), Near H1: no, Near H2: no
+[INFO] [1764828685.400455010] [navigator]: Task Go to Pose got result
+[ERROR] [1764828685.400560385] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 40 - continuing to next...
+[Main] Navigating to Waypoint 41/84 (-6, 6.5)...
+[INFO] [1764828685.400685343] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828685.401321302] [navigator]: GoToPose request was accepted
+[INFO] [1764828688.395060137] [tb4_human_detector]: [Scan 10400] Robot at (-13.88, 5.99), Near H1: no, Near H2: no
+[INFO] [1764828699.423414294] [tb4_human_detector]: [Scan 10500] Robot at (-12.82, 9.64), Near H1: no, Near H2: no
+[INFO] [1764828710.368211799] [tb4_human_detector]: [Scan 10600] Robot at (-12.80, 14.53), Near H1: no, Near H2: YES
+[INFO] [1764828721.329279888] [tb4_human_detector]: [Scan 10700] Robot at (-12.13, 19.41), Near H1: no, Near H2: no
+[INFO] [1764828732.222238337] [tb4_human_detector]: [Scan 10800] Robot at (-10.36, 23.77), Near H1: no, Near H2: no
+[INFO] [1764828743.175140259] [tb4_human_detector]: [Scan 10900] Robot at (-7.94, 20.84), Near H1: no, Near H2: no
+[INFO] [1764828754.097043167] [tb4_human_detector]: [Scan 11000] Robot at (-4.99, 23.39), Near H1: no, Near H2: no
+[INFO] [1764828765.054115339] [tb4_human_detector]: [Scan 11100] Robot at (-0.74, 22.53), Near H1: no, Near H2: no
+[INFO] [1764828775.998553469] [tb4_human_detector]: [Scan 11200] Robot at (4.01, 21.11), Near H1: no, Near H2: no
+[INFO] [1764828786.897716918] [tb4_human_detector]: [Scan 11300] Robot at (8.45, 19.51), Near H1: no, Near H2: no
+[INFO] [1764828797.790369590] [tb4_human_detector]: [Scan 11400] Robot at (7.21, 16.16), Near H1: no, Near H2: no
+[INFO] [1764828808.881317303] [tb4_human_detector]: [Scan 11500] Robot at (3.00, 13.76), Near H1: no, Near H2: no
+[INFO] [1764828819.889299711] [tb4_human_detector]: [Scan 11600] Robot at (-1.43, 11.49), Near H1: no, Near H2: no
+[INFO] [1764828830.794195341] [tb4_human_detector]: [Scan 11700] Robot at (-6.00, 10.78), Near H1: no, Near H2: no
+[INFO] [1764828841.659182638] [tb4_human_detector]: [Scan 11800] Robot at (-6.08, 6.59), Near H1: no, Near H2: no
+[INFO] [1764828844.633323500] [navigator]: Task Go to Pose got result
+[ERROR] [1764828844.633414209] [navigator]: Goal was achieved
+[Main] ✓ Reached WP41 at (-6.01875, 6.44041)
+[INFO] [1764828844.633602834] [tb4_human_detector]: [DEBUG] Scans: 11828, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3010
+[Main] Navigating to Waypoint 42/84 (-1, 6.5)...
+[INFO] [1764828844.633645834] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828844.636060125] [navigator]: GoToPose request was accepted
+[INFO] [1764828852.468421462] [tb4_human_detector]: [Scan 11900] Robot at (-3.96, 6.52), Near H1: no, Near H2: no
+[INFO] [1764828861.097124008] [navigator]: Task Go to Pose got result
+[ERROR] [1764828861.097157716] [navigator]: Goal was achieved
+[Main] ✓ Reached WP42 at (-0.929103, 6.54172)
+[INFO] [1764828861.097231133] [tb4_human_detector]: [DEBUG] Scans: 11982, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3012
+[Main] Navigating to Waypoint 43/84 (3.5, 6.5)...
+[INFO] [1764828861.097244925] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828861.097768883] [navigator]: GoToPose request was accepted
+[INFO] [1764828863.076914592] [tb4_human_detector]: [Scan 12000] Robot at (-0.93, 6.47), Near H1: no, Near H2: no
+[INFO] [1764828873.624654250] [tb4_human_detector]: [Scan 12100] Robot at (3.21, 6.56), Near H1: no, Near H2: no
+[INFO] [1764828876.099309209] [navigator]: Task Go to Pose got result
+[ERROR] [1764828876.099350168] [navigator]: Goal was achieved
+[Main] ✓ Reached WP43 at (3.59445, 6.63175)
+[INFO] [1764828876.099416876] [tb4_human_detector]: [DEBUG] Scans: 12124, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3042
+[Main] Navigating to Waypoint 44/84 (8, 6.5)...
+[INFO] [1764828876.099427418] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828876.101422918] [navigator]: GoToPose request was accepted
+[INFO] [1764828884.247513505] [tb4_human_detector]: [Scan 12200] Robot at (5.74, 6.62), Near H1: no, Near H2: no
+[INFO] [1764828891.064398425] [navigator]: Task Go to Pose got result
+[ERROR] [1764828891.064435091] [navigator]: Goal was achieved
+[Main] ✓ Reached WP44 at (7.97391, 6.56968)
+[INFO] [1764828891.064489341] [tb4_human_detector]: [DEBUG] Scans: 12265, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3066
+[Main] Navigating to Waypoint 45/84 (13.5, 6.5)...
+[INFO] [1764828891.064502216] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828891.065116966] [navigator]: GoToPose request was accepted
+[INFO] [1764828894.824234093] [tb4_human_detector]: [Scan 12300] Robot at (8.17, 6.57), Near H1: no, Near H2: no
+[INFO] [1764828905.457012292] [tb4_human_detector]: [Scan 12400] Robot at (12.96, 6.60), Near H1: no, Near H2: no
+[INFO] [1764828909.058047586] [navigator]: Task Go to Pose got result
+[ERROR] [1764828909.058142002] [navigator]: Goal was achieved
+[Main] ✓ Reached WP45 at (13.5775, 6.56013)
+[INFO] [1764828909.058234586] [tb4_human_detector]: [DEBUG] Scans: 12435, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3082
+[Main] Navigating to Waypoint 46/84 (13.5, 4.5)...
+[INFO] [1764828909.058257336] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828909.058827752] [navigator]: GoToPose request was accepted
+[INFO] [1764828916.124504589] [tb4_human_detector]: [Scan 12500] Robot at (11.93, 6.52), Near H1: no, Near H2: no
+[INFO] [1764828926.789574302] [tb4_human_detector]: [Scan 12600] Robot at (7.25, 5.39), Near H1: no, Near H2: no
+[INFO] [1764828937.449977918] [tb4_human_detector]: [Scan 12700] Robot at (9.92, 3.44), Near H1: no, Near H2: no
+[INFO] [1764828948.090526840] [tb4_human_detector]: [Scan 12800] Robot at (13.49, 3.66), Near H1: no, Near H2: no
+[INFO] [1764828948.704026174] [navigator]: Task Go to Pose got result
+[ERROR] [1764828948.704143840] [navigator]: Goal was achieved
+[Main] ✓ Reached WP46 at (13.5351, 3.6766)
+[Main] Performing 360° scan...
+[INFO] [1764828948.704334840] [navigator]: Waiting for Spin action server
+[INFO] [1764828948.705894757] [navigator]: In task Spin response callback
+[INFO] [1764828948.705930424] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764828948.706540215] [navigator]: Spin request was accepted
+[INFO] [1764828950.607549800] [navigator]: Task Spin got result
+[ERROR] [1764828950.607584883] [navigator]: Goal was achieved
+[INFO] [1764828951.608106008] [tb4_human_detector]: [DEBUG] Scans: 12833, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3111
+[Main] Navigating to Waypoint 47/84 (10, 4.5)...
+[INFO] [1764828951.608211217] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828951.608919758] [navigator]: GoToPose request was accepted
+[INFO] [1764828958.692802887] [tb4_human_detector]: [Scan 12900] Robot at (13.57, 3.86), Near H1: no, Near H2: no
+[INFO] [1764828969.194679336] [tb4_human_detector]: [Scan 13000] Robot at (13.55, 4.15), Near H1: no, Near H2: no
+[INFO] [1764828970.407439461] [navigator]: Task Go to Pose got result
+[ERROR] [1764828970.407480753] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 47 - continuing to next...
+[Main] Navigating to Waypoint 48/84 (6, 4.5)...
+[INFO] [1764828970.407560628] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764828970.408154670] [navigator]: GoToPose request was accepted
+[INFO] [1764828979.667017257] [tb4_human_detector]: [Scan 13100] Robot at (13.54, 4.13), Near H1: no, Near H2: no
+[INFO] [1764828990.342829512] [tb4_human_detector]: [Scan 13200] Robot at (13.41, 3.33), Near H1: no, Near H2: no
+[INFO] [1764829001.107957795] [tb4_human_detector]: [Scan 13300] Robot at (10.24, 3.40), Near H1: no, Near H2: no
+[INFO] [1764829011.717829217] [tb4_human_detector]: [Scan 13400] Robot at (6.16, 4.39), Near H1: no, Near H2: no
+[INFO] [1764829012.463245884] [navigator]: Task Go to Pose got result
+[ERROR] [1764829012.463297134] [navigator]: Goal was achieved
+[Main] ✓ Reached WP48 at (6.10999, 4.38389)
+[INFO] [1764829012.463362550] [tb4_human_detector]: [DEBUG] Scans: 13408, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3135
+[Main] Navigating to Waypoint 49/84 (3.5, 7.5)...
+[INFO] [1764829012.463372050] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829012.464514884] [navigator]: GoToPose request was accepted
+[INFO] [1764829022.252438180] [tb4_human_detector]: [Scan 13500] Robot at (3.59, 7.27), Near H1: no, Near H2: no
+[INFO] [1764829022.778057055] [navigator]: Task Go to Pose got result
+[ERROR] [1764829022.778101597] [navigator]: Goal was achieved
+[Main] ✓ Reached WP49 at (3.58273, 7.35864)
+[INFO] [1764829022.778157972] [tb4_human_detector]: [DEBUG] Scans: 13506, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3142
+[Main] Navigating to Waypoint 50/84 (3.5, 9.5)...
+[INFO] [1764829022.778179889] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829022.779074055] [navigator]: GoToPose request was accepted
+[INFO] [1764829032.642341046] [tb4_human_detector]: [Scan 13600] Robot at (3.43, 7.42), Near H1: no, Near H2: no
+[INFO] [1764829042.392081217] [navigator]: Task Go to Pose got result
+[ERROR] [1764829042.392205675] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 50 - continuing to next...
+[Main] Navigating to Waypoint 51/84 (3.5, 11.5)...
+[INFO] [1764829042.392638467] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829042.394595175] [navigator]: GoToPose request was accepted
+[INFO] [1764829043.413931218] [tb4_human_detector]: [Scan 13700] Robot at (3.72, 7.39), Near H1: no, Near H2: no
+[INFO] [1764829054.402278417] [tb4_human_detector]: [Scan 13800] Robot at (7.90, 6.47), Near H1: no, Near H2: no
+[INFO] [1764829065.298058297] [tb4_human_detector]: [Scan 13900] Robot at (12.45, 7.21), Near H1: no, Near H2: no
+[INFO] [1764829076.196597011] [tb4_human_detector]: [Scan 14000] Robot at (12.68, 10.92), Near H1: no, Near H2: no
+[INFO] [1764829086.953180168] [tb4_human_detector]: [Scan 14100] Robot at (7.82, 11.48), Near H1: no, Near H2: no
+[INFO] [1764829097.671904840] [tb4_human_detector]: [Scan 14200] Robot at (3.57, 11.56), Near H1: no, Near H2: no
+[INFO] [1764829098.535702257] [navigator]: Task Go to Pose got result
+[ERROR] [1764829098.535799632] [navigator]: Goal was achieved
+[Main] ✓ Reached WP51 at (3.48116, 11.6061)
+[INFO] [1764829098.535958632] [tb4_human_detector]: [DEBUG] Scans: 14209, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3171
+[Main] Navigating to Waypoint 52/84 (-1, 9)...
+[INFO] [1764829098.536005882] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829098.537140840] [navigator]: GoToPose request was accepted
+[INFO] [1764829108.482781303] [tb4_human_detector]: [Scan 14300] Robot at (3.50, 11.61), Near H1: no, Near H2: no
+[INFO] [1764829118.371213210] [navigator]: Task Go to Pose got result
+[ERROR] [1764829118.371250544] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 52 - continuing to next...
+[Main] Navigating to Waypoint 53/84 (-6, 9)...
+[INFO] [1764829118.371319960] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829118.372147419] [navigator]: GoToPose request was accepted
+[INFO] [1764829119.613977086] [tb4_human_detector]: [Scan 14400] Robot at (3.49, 11.83), Near H1: no, Near H2: no
+[INFO] [1764829130.930267883] [tb4_human_detector]: [Scan 14500] Robot at (-0.03, 11.62), Near H1: no, Near H2: no
+[INFO] [1764829142.035586472] [tb4_human_detector]: [Scan 14600] Robot at (-4.89, 10.91), Near H1: no, Near H2: no
+[INFO] [1764829152.992124421] [tb4_human_detector]: [Scan 14700] Robot at (-6.02, 8.96), Near H1: no, Near H2: no
+[INFO] [1764829154.080345255] [navigator]: Task Go to Pose got result
+[ERROR] [1764829154.080462088] [navigator]: Goal was achieved
+[Main] ✓ Reached WP53 at (-5.97447, 8.95501)
+[INFO] [1764829154.080600963] [tb4_human_detector]: [DEBUG] Scans: 14710, Near H1: 160 (hits: 0), Near H2: 154 (hits: 154), Clusters: 3196
+[Main] Navigating to Waypoint 54/84 (-10.4, 10.5)...
+[INFO] [1764829154.080628838] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829154.082155630] [navigator]: GoToPose request was accepted
+[INFO] [1764829163.746014968] [tb4_human_detector]: [Scan 14800] Robot at (-5.94, 8.99), Near H1: no, Near H2: no
+[INFO] [1764829174.420244833] [tb4_human_detector]: [Scan 14900] Robot at (-5.96, 9.10), Near H1: no, Near H2: no
+[INFO] [1764829176.374386209] [navigator]: Task Go to Pose got result
+[ERROR] [1764829176.374412668] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 54 - continuing to next...
+[Main] Navigating to Waypoint 55/84 (-13, 10)...
+[INFO] [1764829176.374621418] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829176.376612709] [navigator]: GoToPose request was accepted
+[INFO] [1764829185.267105297] [tb4_human_detector]: [Scan 15000] Robot at (-6.00, 10.73), Near H1: no, Near H2: no
+[INFO] [1764829196.221583927] [tb4_human_detector]: [Scan 15100] Robot at (-1.60, 11.88), Near H1: no, Near H2: no
+[INFO] [1764829207.345358043] [tb4_human_detector]: [Scan 15200] Robot at (2.65, 14.44), Near H1: no, Near H2: no
+[INFO] [1764829218.533180132] [tb4_human_detector]: [Scan 15300] Robot at (7.34, 16.12), Near H1: no, Near H2: no
+[INFO] [1764829229.659931804] [tb4_human_detector]: [Scan 15400] Robot at (8.26, 19.81), Near H1: no, Near H2: no
+[INFO] [1764829240.860231212] [tb4_human_detector]: [Scan 15500] Robot at (3.86, 22.28), Near H1: no, Near H2: no
+[INFO] [1764829252.082895967] [tb4_human_detector]: [Scan 15600] Robot at (-0.96, 23.61), Near H1: no, Near H2: no
+[INFO] [1764829263.136003264] [tb4_human_detector]: [Scan 15700] Robot at (-5.21, 22.91), Near H1: no, Near H2: no
+[INFO] [1764829274.267947213] [tb4_human_detector]: [Scan 15800] Robot at (-8.01, 21.25), Near H1: no, Near H2: no
+[INFO] [1764829285.392416843] [tb4_human_detector]: [Scan 15900] Robot at (-10.78, 23.48), Near H1: no, Near H2: no
+[INFO] [1764829296.628069584] [tb4_human_detector]: [Scan 16000] Robot at (-11.94, 18.66), Near H1: no, Near H2: no
+[INFO] [1764829307.872218590] [tb4_human_detector]: [Scan 16100] Robot at (-12.84, 13.89), Near H1: no, Near H2: YES
+[INFO] [1764829319.079549304] [tb4_human_detector]: [Scan 16200] Robot at (-13.02, 9.98), Near H1: no, Near H2: no
+[INFO] [1764829320.848605513] [navigator]: Task Go to Pose got result
+[ERROR] [1764829320.848721679] [navigator]: Goal was achieved
+[Main] ✓ Reached WP55 at (-13.0064, 10.0411)
+[INFO] [1764829320.848882679] [tb4_human_detector]: [DEBUG] Scans: 16215, Near H1: 160 (hits: 0), Near H2: 234 (hits: 234), Clusters: 3221
+[Main] Navigating to Waypoint 56/84 (-13, 14)...
+[INFO] [1764829320.848917221] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829320.850800929] [navigator]: GoToPose request was accepted
+[INFO] [1764829330.397037878] [tb4_human_detector]: [Scan 16300] Robot at (-12.96, 13.59), Near H1: no, Near H2: YES
+[INFO] [1764829330.844909211] [navigator]: Task Go to Pose got result
+[ERROR] [1764829330.844986670] [navigator]: Goal was achieved
+[Main] ✓ Reached WP56 at (-12.9407, 13.3944)
+[Main] Performing 360° scan...
+[INFO] [1764829330.845110420] [navigator]: Waiting for Spin action server
+[INFO] [1764829330.846300003] [navigator]: In task Spin response callback
+[INFO] [1764829330.846316420] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764829330.846376295] [navigator]: Spin request was accepted
+[INFO] [1764829332.947917379] [navigator]: Task Spin got result
+[ERROR] [1764829332.947961921] [navigator]: Goal was achieved
+[INFO] [1764829333.949346796] [tb4_human_detector]: [DEBUG] Scans: 16332, Near H1: 160 (hits: 0), Near H2: 275 (hits: 275), Clusters: 3221
+[Main] Navigating to Waypoint 57/84 (-10.4, 14.75)...
+[INFO] [1764829333.949440005] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829333.950203421] [navigator]: GoToPose request was accepted
+[INFO] [1764829341.474289008] [tb4_human_detector]: [Scan 16400] Robot at (-13.02, 13.68), Near H1: no, Near H2: YES
+[INFO] [1764829352.592070180] [tb4_human_detector]: [Scan 16500] Robot at (-13.11, 13.90), Near H1: no, Near H2: YES
+[INFO] [1764829353.402959083] [navigator]: Task Go to Pose got result
+[ERROR] [1764829353.403006416] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 57 - continuing to next...
+[Main] Navigating to Waypoint 58/84 (-6, 14)...
+[INFO] [1764829353.403110125] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829353.406096166] [navigator]: GoToPose request was accepted
+[INFO] [1764829363.663165421] [tb4_human_detector]: [Scan 16600] Robot at (-12.60, 17.00), Near H1: no, Near H2: no
+[INFO] [1764829374.862716677] [tb4_human_detector]: [Scan 16700] Robot at (-11.43, 21.88), Near H1: no, Near H2: no
+[INFO] [1764829386.282496084] [tb4_human_detector]: [Scan 16800] Robot at (-8.71, 23.01), Near H1: no, Near H2: no
+[INFO] [1764829397.455903215] [tb4_human_detector]: [Scan 16900] Robot at (-5.86, 21.21), Near H1: no, Near H2: no
+[INFO] [1764829408.498080345] [tb4_human_detector]: [Scan 17000] Robot at (-2.96, 23.49), Near H1: no, Near H2: no
+[INFO] [1764829419.525462086] [tb4_human_detector]: [Scan 17100] Robot at (1.67, 21.78), Near H1: no, Near H2: no
+[INFO] [1764829430.709787675] [tb4_human_detector]: [Scan 17200] Robot at (6.47, 20.37), Near H1: no, Near H2: no
+[INFO] [1764829441.876267555] [tb4_human_detector]: [Scan 17300] Robot at (8.54, 16.95), Near H1: no, Near H2: no
+[INFO] [1764829453.193100171] [tb4_human_detector]: [Scan 17400] Robot at (4.52, 15.90), Near H1: no, Near H2: no
+[INFO] [1764829464.399012510] [tb4_human_detector]: [Scan 17500] Robot at (-0.48, 15.07), Near H1: no, Near H2: no
+[INFO] [1764829475.515290626] [tb4_human_detector]: [Scan 17600] Robot at (-5.47, 14.15), Near H1: no, Near H2: no
+[INFO] [1764829478.976860544] [navigator]: Task Go to Pose got result
+[ERROR] [1764829478.976977794] [navigator]: Goal was achieved
+[Main] ✓ Reached WP58 at (-6.02818, 14.0398)
+[INFO] [1764829478.977099211] [tb4_human_detector]: [DEBUG] Scans: 17632, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3245
+[Main] Navigating to Waypoint 59/84 (-1, 14)...
+[INFO] [1764829478.977120669] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829478.981035669] [navigator]: GoToPose request was accepted
+[INFO] [1764829486.573768214] [tb4_human_detector]: [Scan 17700] Robot at (-4.10, 14.04), Near H1: no, Near H2: no
+[INFO] [1764829496.382597761] [navigator]: Task Go to Pose got result
+[ERROR] [1764829496.382648802] [navigator]: Goal was achieved
+[Main] ✓ Reached WP59 at (-0.985896, 14.1372)
+[INFO] [1764829496.382721552] [tb4_human_detector]: [DEBUG] Scans: 17790, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3246
+[Main] Navigating to Waypoint 60/84 (3, 14)...
+[INFO] [1764829496.382732844] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829496.383458219] [navigator]: GoToPose request was accepted
+[INFO] [1764829497.582846053] [tb4_human_detector]: [Scan 17800] Robot at (-1.01, 14.04), Near H1: no, Near H2: no
+[INFO] [1764829508.685257544] [tb4_human_detector]: [Scan 17900] Robot at (2.67, 14.13), Near H1: no, Near H2: no
+[INFO] [1764829511.837409087] [navigator]: Task Go to Pose got result
+[ERROR] [1764829511.837580337] [navigator]: Goal was achieved
+[Main] ✓ Reached WP60 at (2.98095, 14.2106)
+[INFO] [1764829511.837745045] [tb4_human_detector]: [DEBUG] Scans: 17928, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3252
+[Main] Navigating to Waypoint 61/84 (7, 14)...
+[INFO] [1764829511.837883879] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829511.838989879] [navigator]: GoToPose request was accepted
+[INFO] [1764829519.860771757] [tb4_human_detector]: [Scan 18000] Robot at (5.04, 14.17), Near H1: no, Near H2: no
+[INFO] [1764829526.790247969] [navigator]: Task Go to Pose got result
+[ERROR] [1764829526.790307969] [navigator]: Goal was achieved
+[Main] ✓ Reached WP61 at (7.13311, 14.1246)
+[Main] Performing 360° scan...
+[INFO] [1764829526.790427677] [navigator]: Waiting for Spin action server
+[INFO] [1764829526.792433011] [navigator]: In task Spin response callback
+[INFO] [1764829526.793143719] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764829526.794018302] [navigator]: Spin request was accepted
+[INFO] [1764829528.825734512] [navigator]: Task Spin got result
+[ERROR] [1764829528.825775012] [navigator]: Goal was achieved
+[INFO] [1764829529.826045804] [tb4_human_detector]: [DEBUG] Scans: 18091, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3263
+[Main] Navigating to Waypoint 62/84 (7, 17)...
+[INFO] [1764829529.826113012] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829529.826978471] [navigator]: GoToPose request was accepted
+[INFO] [1764829530.934232679] [tb4_human_detector]: [Scan 18100] Robot at (7.05, 14.13), Near H1: no, Near H2: no
+[INFO] [1764829540.152549294] [navigator]: Task Go to Pose got result
+[ERROR] [1764829540.152704919] [navigator]: Goal was achieved
+[Main] ✓ Reached WP62 at (6.90993, 16.5454)
+[INFO] [1764829540.152928253] [tb4_human_detector]: [DEBUG] Scans: 18182, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3263
+[Main] Navigating to Waypoint 63/84 (3, 17)...
+[INFO] [1764829540.152978294] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829540.153819711] [navigator]: GoToPose request was accepted
+[INFO] [1764829542.171141504] [tb4_human_detector]: [Scan 18200] Robot at (6.85, 16.30), Near H1: no, Near H2: no
+[INFO] [1764829553.266548092] [tb4_human_detector]: [Scan 18300] Robot at (4.03, 16.21), Near H1: no, Near H2: no
+[INFO] [1764829561.685195430] [navigator]: Task Go to Pose got result
+[ERROR] [1764829561.685237971] [navigator]: Goal was achieved
+[Main] ✓ Reached WP63 at (2.84227, 16.4274)
+[INFO] [1764829561.685395513] [tb4_human_detector]: [DEBUG] Scans: 18378, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3263
+[Main] Navigating to Waypoint 64/84 (-1.3, 17)...
+[INFO] [1764829561.685435013] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829561.686675013] [navigator]: GoToPose request was accepted
+[INFO] [1764829564.238765042] [tb4_human_detector]: [Scan 18400] Robot at (2.73, 16.33), Near H1: no, Near H2: no
+[INFO] [1764829575.348237630] [tb4_human_detector]: [Scan 18500] Robot at (0.54, 16.19), Near H1: no, Near H2: no
+[INFO] [1764829584.957607593] [navigator]: Task Go to Pose got result
+[ERROR] [1764829584.957652177] [navigator]: Goal was achieved
+[Main] ✓ Reached WP64 at (-1.44179, 16.4256)
+[INFO] [1764829584.957762135] [tb4_human_detector]: [DEBUG] Scans: 18590, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3265
+[Main] Navigating to Waypoint 65/84 (-1.3, 18.5)...
+[INFO] [1764829584.957787135] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829584.958240260] [navigator]: GoToPose request was accepted
+[INFO] [1764829586.172471510] [tb4_human_detector]: [Scan 18600] Robot at (-1.47, 16.56), Near H1: no, Near H2: no
+[INFO] [1764829597.201329418] [tb4_human_detector]: [Scan 18700] Robot at (-1.34, 16.66), Near H1: no, Near H2: no
+[INFO] [1764829604.379964505] [navigator]: Task Go to Pose got result
+[ERROR] [1764829604.380219046] [navigator]: Goal was aborted
+[Main] ✗ Failed to reach waypoint 65 - continuing to next...
+[Main] Navigating to Waypoint 66/84 (-1.3, 20)...
+[INFO] [1764829604.380351880] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829604.382133588] [navigator]: GoToPose request was accepted
+[INFO] [1764829608.023945257] [tb4_human_detector]: [Scan 18800] Robot at (-1.15, 16.21), Near H1: no, Near H2: no
+[INFO] [1764829619.159202845] [tb4_human_detector]: [Scan 18900] Robot at (3.69, 16.20), Near H1: no, Near H2: no
+[INFO] [1764829630.431883211] [tb4_human_detector]: [Scan 19000] Robot at (8.38, 16.50), Near H1: no, Near H2: no
+[INFO] [1764829641.784443300] [tb4_human_detector]: [Scan 19100] Robot at (6.96, 20.05), Near H1: no, Near H2: no
+[INFO] [1764829653.206880139] [tb4_human_detector]: [Scan 19200] Robot at (1.92, 20.18), Near H1: no, Near H2: no
+[INFO] [1764829662.749740379] [navigator]: Task Go to Pose got result
+[ERROR] [1764829662.749830046] [navigator]: Goal was achieved
+[Main] ✓ Reached WP66 at (-1.3189, 20.142)
+[INFO] [1764829662.749990837] [tb4_human_detector]: [DEBUG] Scans: 19287, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3288
+[Main] Navigating to Waypoint 67/84 (3, 20)...
+[INFO] [1764829662.750106254] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829662.751540546] [navigator]: GoToPose request was accepted
+[INFO] [1764829664.179717130] [tb4_human_detector]: [Scan 19300] Robot at (-1.31, 20.02), Near H1: no, Near H2: no
+[INFO] [1764829675.167475802] [tb4_human_detector]: [Scan 19400] Robot at (2.60, 20.13), Near H1: no, Near H2: no
+[INFO] [1764829678.746025887] [navigator]: Task Go to Pose got result
+[ERROR] [1764829678.746067053] [navigator]: Goal was achieved
+[Main] ✓ Reached WP67 at (3.06401, 20.0101)
+[INFO] [1764829678.746122428] [tb4_human_detector]: [DEBUG] Scans: 19433, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3290
+[Main] Navigating to Waypoint 68/84 (7, 20)...
+[INFO] [1764829678.746131803] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829678.746919428] [navigator]: GoToPose request was accepted
+[INFO] [1764829686.243269543] [tb4_human_detector]: [Scan 19500] Robot at (4.96, 20.07), Near H1: no, Near H2: no
+[INFO] [1764829692.999541754] [navigator]: Task Go to Pose got result
+[ERROR] [1764829692.999576087] [navigator]: Goal was achieved
+[Main] ✓ Reached WP68 at (6.94446, 20.1197)
+[INFO] [1764829692.999647629] [tb4_human_detector]: [DEBUG] Scans: 19562, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3290
+[Main] Navigating to Waypoint 69/84 (-4, 21.5)...
+[INFO] [1764829692.999666087] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829693.000290879] [navigator]: GoToPose request was accepted
+[INFO] [1764829697.314515590] [tb4_human_detector]: [Scan 19600] Robot at (6.39, 20.49), Near H1: no, Near H2: no
+[INFO] [1764829708.515085262] [tb4_human_detector]: [Scan 19700] Robot at (2.06, 22.79), Near H1: no, Near H2: no
+[INFO] [1764829719.740478294] [tb4_human_detector]: [Scan 19800] Robot at (-2.82, 23.63), Near H1: no, Near H2: no
+[INFO] [1764829730.957199925] [tb4_human_detector]: [Scan 19900] Robot at (-5.04, 22.01), Near H1: no, Near H2: no
+[INFO] [1764829736.932934219] [navigator]: Task Go to Pose got result
+[ERROR] [1764829736.933005094] [navigator]: Goal was achieved
+[Main] ✓ Reached WP69 at (-4.45114, 21.5824)
+[INFO] [1764829736.933113427] [tb4_human_detector]: [DEBUG] Scans: 19956, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3296
+[Main] Navigating to Waypoint 70/84 (-7, 21.5)...
+[INFO] [1764829736.933139927] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829736.936577094] [navigator]: GoToPose request was accepted
+[INFO] [1764829741.884995222] [tb4_human_detector]: [Scan 20000] Robot at (-5.09, 21.39), Near H1: no, Near H2: no
+[INFO] [1764829749.316681211] [navigator]: Task Go to Pose got result
+[ERROR] [1764829749.316757002] [navigator]: Goal was achieved
+[Main] ✓ Reached WP70 at (-7.01488, 21.0082)
+[INFO] [1764829749.316837044] [tb4_human_detector]: [DEBUG] Scans: 20069, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3297
+[Main] Navigating to Waypoint 71/84 (-10, 21.5)...
+[INFO] [1764829749.316848377] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829749.318805377] [navigator]: GoToPose request was accepted
+[INFO] [1764829752.827446546] [tb4_human_detector]: [Scan 20100] Robot at (-7.18, 20.70), Near H1: no, Near H2: no
+[INFO] [1764829764.190461218] [tb4_human_detector]: [Scan 20200] Robot at (-8.56, 22.79), Near H1: no, Near H2: no
+[INFO] [1764829775.507458376] [tb4_human_detector]: [Scan 20300] Robot at (-11.02, 22.24), Near H1: no, Near H2: no
+[INFO] [1764829781.902501670] [navigator]: Task Go to Pose got result
+[ERROR] [1764829781.902727420] [navigator]: Goal was achieved
+[Main] ✓ Reached WP71 at (-10.4327, 21.6381)
+[INFO] [1764829781.902910795] [tb4_human_detector]: [DEBUG] Scans: 20360, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3304
+[Main] Navigating to Waypoint 72/84 (-12, 18)...
+[INFO] [1764829781.902983962] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829781.905601337] [navigator]: GoToPose request was accepted
+[INFO] [1764829786.319277797] [tb4_human_detector]: [Scan 20400] Robot at (-10.76, 21.55), Near H1: no, Near H2: no
+[INFO] [1764829797.236441928] [tb4_human_detector]: [Scan 20500] Robot at (-12.08, 17.86), Near H1: no, Near H2: no
+[INFO] [1764829798.566679887] [navigator]: Task Go to Pose got result
+[ERROR] [1764829798.566715345] [navigator]: Goal was achieved
+[Main] ✓ Reached WP72 at (-12.0993, 17.786)
+[INFO] [1764829798.566790553] [tb4_human_detector]: [DEBUG] Scans: 20513, Near H1: 160 (hits: 0), Near H2: 541 (hits: 541), Clusters: 3308
+[Main] Navigating to Waypoint 73/84 (-12, 15)...
+[INFO] [1764829798.566801095] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829798.569329178] [navigator]: GoToPose request was accepted
+[INFO] [1764829808.043500585] [tb4_human_detector]: [Scan 20600] Robot at (-12.40, 16.36), Near H1: no, Near H2: YES
+[INFO] [1764829818.814240507] [tb4_human_detector]: [Scan 20700] Robot at (-12.78, 15.69), Near H1: no, Near H2: YES
+[INFO] [1764829829.617112595] [tb4_human_detector]: [Scan 20800] Robot at (-12.42, 14.46), Near H1: no, Near H2: YES
+[INFO] [1764829833.801867375] [navigator]: Task Go to Pose got result
+[ERROR] [1764829833.802286416] [navigator]: Goal was achieved
+[Main] ✓ Reached WP73 at (-12.0136, 14.696)
+[Main] Performing 360° scan...
+[INFO] [1764829833.802525916] [navigator]: Waiting for Spin action server
+[INFO] [1764829833.805955250] [navigator]: In task Spin response callback
+[INFO] [1764829833.805999458] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764829833.806077041] [navigator]: Spin request was accepted
+[INFO] [1764829835.906907042] [navigator]: Task Spin got result
+[ERROR] [1764829835.906951542] [navigator]: Goal was achieved
+[INFO] [1764829836.907220126] [tb4_human_detector]: [DEBUG] Scans: 20864, Near H1: 160 (hits: 0), Near H2: 840 (hits: 840), Clusters: 3308
+[Main] Navigating to Waypoint 74/84 (-8, 15)...
+[INFO] [1764829836.907417501] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829836.908649626] [navigator]: GoToPose request was accepted
+[INFO] [1764829841.262870587] [tb4_human_detector]: [Scan 20900] Robot at (-11.87, 14.72), Near H1: no, Near H2: YES
+[INFO] [1764829852.527346134] [tb4_human_detector]: [Scan 21000] Robot at (-12.73, 16.33), Near H1: no, Near H2: YES
+[INFO] [1764829863.544625000] [tb4_human_detector]: [Scan 21100] Robot at (-11.67, 21.13), Near H1: no, Near H2: no
+[INFO] [1764829874.626624630] [tb4_human_detector]: [Scan 21200] Robot at (-8.96, 23.65), Near H1: no, Near H2: no
+[INFO] [1764829886.467491344] [tb4_human_detector]: [Scan 21300] Robot at (-6.35, 20.74), Near H1: no, Near H2: no
+[INFO] [1764829897.829551252] [tb4_human_detector]: [Scan 21400] Robot at (-3.34, 23.64), Near H1: no, Near H2: no
+[INFO] [1764829908.931819215] [tb4_human_detector]: [Scan 21500] Robot at (1.21, 21.86), Near H1: no, Near H2: no
+[INFO] [1764829920.071157679] [tb4_human_detector]: [Scan 21600] Robot at (6.13, 20.50), Near H1: no, Near H2: no
+[INFO] [1764829931.130006962] [tb4_human_detector]: [Scan 21700] Robot at (8.58, 17.55), Near H1: no, Near H2: no
+[INFO] [1764829942.419320842] [tb4_human_detector]: [Scan 21800] Robot at (5.01, 16.16), Near H1: no, Near H2: no
+[INFO] [1764829953.627358375] [tb4_human_detector]: [Scan 21900] Robot at (0.06, 16.08), Near H1: no, Near H2: no
+[INFO] [1764829965.113412047] [tb4_human_detector]: [Scan 22000] Robot at (-4.90, 16.04), Near H1: no, Near H2: no
+[INFO] [1764829975.974989094] [tb4_human_detector]: [Scan 22100] Robot at (-8.21, 16.03), Near H1: no, Near H2: no
+[INFO] [1764829985.950097251] [navigator]: Task Go to Pose got result
+[ERROR] [1764829985.950156917] [navigator]: Goal was achieved
+[Main] ✓ Reached WP74 at (-7.9861, 15.1336)
+[INFO] [1764829985.950298251] [tb4_human_detector]: [DEBUG] Scans: 22193, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3326
+[Main] Navigating to Waypoint 75/84 (-7, 23.6)...
+[INFO] [1764829985.950332626] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764829985.951492001] [navigator]: GoToPose request was accepted
+[INFO] [1764829986.734825918] [tb4_human_detector]: [Scan 22200] Robot at (-7.99, 15.04), Near H1: no, Near H2: no
+[INFO] [1764829997.604719715] [tb4_human_detector]: [Scan 22300] Robot at (-6.93, 16.12), Near H1: no, Near H2: no
+[INFO] [1764830008.519695678] [tb4_human_detector]: [Scan 22400] Robot at (-2.25, 16.25), Near H1: no, Near H2: no
+[INFO] [1764830019.464643461] [tb4_human_detector]: [Scan 22500] Robot at (2.59, 16.22), Near H1: no, Near H2: no
+[INFO] [1764830030.387688258] [tb4_human_detector]: [Scan 22600] Robot at (7.60, 16.20), Near H1: no, Near H2: no
+[INFO] [1764830041.640132888] [tb4_human_detector]: [Scan 22700] Robot at (8.04, 19.99), Near H1: no, Near H2: no
+[INFO] [1764830052.606876087] [tb4_human_detector]: [Scan 22800] Robot at (3.61, 22.43), Near H1: no, Near H2: no
+[INFO] [1764830063.515721592] [tb4_human_detector]: [Scan 22900] Robot at (-1.14, 23.65), Near H1: no, Near H2: no
+[INFO] [1764830074.452330042] [tb4_human_detector]: [Scan 23000] Robot at (-5.29, 22.62), Near H1: no, Near H2: no
+[INFO] [1764830085.337134922] [tb4_human_detector]: [Scan 23100] Robot at (-8.06, 21.53), Near H1: no, Near H2: no
+[INFO] [1764830096.054775927] [tb4_human_detector]: [Scan 23200] Robot at (-7.66, 23.69), Near H1: no, Near H2: no
+[INFO] [1764830106.715785418] [tb4_human_detector]: [Scan 23300] Robot at (-7.68, 23.58), Near H1: no, Near H2: no
+[INFO] [1764830117.429388548] [tb4_human_detector]: [Scan 23400] Robot at (-7.68, 23.57), Near H1: no, Near H2: no
+[INFO] [1764830128.110188553] [tb4_human_detector]: [Scan 23500] Robot at (-7.68, 23.57), Near H1: no, Near H2: no
+[INFO] [1764830138.844624669] [tb4_human_detector]: [Scan 23600] Robot at (-7.56, 23.64), Near H1: no, Near H2: no
+[INFO] [1764830141.751769212] [navigator]: Task Go to Pose got result
+[ERROR] [1764830141.751902962] [navigator]: Goal was achieved
+[Main] ✓ Reached WP75 at (-7.41751, 23.6294)
+[INFO] [1764830141.752207754] [tb4_human_detector]: [DEBUG] Scans: 23628, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3334
+[Main] Navigating to Waypoint 76/84 (-4, 23)...
+[INFO] [1764830141.752274254] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830141.754166670] [navigator]: GoToPose request was accepted
+[INFO] [1764830149.659819799] [tb4_human_detector]: [Scan 23700] Robot at (-8.03, 22.11), Near H1: no, Near H2: no
+[INFO] [1764830160.434851887] [tb4_human_detector]: [Scan 23800] Robot at (-5.51, 22.03), Near H1: no, Near H2: no
+[INFO] [1764830171.187359045] [tb4_human_detector]: [Scan 23900] Robot at (-4.25, 23.64), Near H1: no, Near H2: no
+[INFO] [1764830175.548404547] [navigator]: Task Go to Pose got result
+[ERROR] [1764830175.548447922] [navigator]: Goal was achieved
+[Main] ✓ Reached WP76 at (-3.94705, 23.3476)
+[Main] Performing 360° scan...
+[INFO] [1764830175.548521297] [navigator]: Waiting for Spin action server
+[INFO] [1764830175.551820714] [navigator]: In task Spin response callback
+[INFO] [1764830175.551848880] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764830175.551943755] [navigator]: Spin request was accepted
+[INFO] [1764830177.451517381] [navigator]: Task Spin got result
+[ERROR] [1764830177.451547840] [navigator]: Goal was achieved
+[INFO] [1764830178.453851840] [tb4_human_detector]: [DEBUG] Scans: 23969, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3336
+[Main] Navigating to Waypoint 77/84 (0, 23)...
+[INFO] [1764830178.453919632] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830178.455910132] [navigator]: GoToPose request was accepted
+[INFO] [1764830181.943787592] [tb4_human_detector]: [Scan 24000] Robot at (-3.96, 23.44), Near H1: no, Near H2: no
+[INFO] [1764830193.051336555] [tb4_human_detector]: [Scan 24100] Robot at (-0.04, 23.08), Near H1: no, Near H2: no
+[INFO] [1764830194.858004459] [navigator]: Task Go to Pose got result
+[ERROR] [1764830194.858055917] [navigator]: Goal was achieved
+[Main] ✓ Reached WP77 at (0.00551165, 23.0753)
+[INFO] [1764830194.858170667] [tb4_human_detector]: [DEBUG] Scans: 24117, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3344
+[Main] Navigating to Waypoint 78/84 (4, 23)...
+[INFO] [1764830194.858198750] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830194.862287334] [navigator]: GoToPose request was accepted
+[INFO] [1764830204.058366088] [tb4_human_detector]: [Scan 24200] Robot at (2.52, 23.11), Near H1: no, Near H2: no
+[INFO] [1764830209.665237716] [navigator]: Task Go to Pose got result
+[ERROR] [1764830209.665281799] [navigator]: Goal was achieved
+[Main] ✓ Reached WP78 at (4.02707, 23.0749)
+[INFO] [1764830209.665389507] [tb4_human_detector]: [DEBUG] Scans: 24252, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3344
+[Main] Navigating to Waypoint 79/84 (8, 23)...
+[INFO] [1764830209.665423007] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830209.666109924] [navigator]: GoToPose request was accepted
+[INFO] [1764830215.100009260] [tb4_human_detector]: [Scan 24300] Robot at (4.90, 23.08), Near H1: no, Near H2: no
+[INFO] [1764830224.633490667] [navigator]: Task Go to Pose got result
+[ERROR] [1764830224.633635667] [navigator]: Goal was achieved
+[Main] ✓ Reached WP79 at (7.96052, 23.117)
+[INFO] [1764830224.633748792] [tb4_human_detector]: [DEBUG] Scans: 24385, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3346
+[Main] Navigating to Waypoint 80/84 (13, 20)...
+[INFO] [1764830224.633774333] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830224.635020667] [navigator]: GoToPose request was accepted
+[INFO] [1764830226.382908418] [tb4_human_detector]: [Scan 24400] Robot at (7.92, 22.94), Near H1: no, Near H2: no
+[INFO] [1764830238.221938132] [tb4_human_detector]: [Scan 24500] Robot at (11.29, 21.10), Near H1: no, Near H2: no
+[INFO] [1764830245.293736760] [navigator]: Task Go to Pose got result
+[ERROR] [1764830245.293795302] [navigator]: Goal was achieved
+[Main] ✓ Reached WP80 at (13.0394, 20.085)
+[INFO] [1764830245.293878802] [tb4_human_detector]: [DEBUG] Scans: 24564, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3365
+[Main] Navigating to Waypoint 81/84 (13, 15)...
+[INFO] [1764830245.293893635] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830245.297596677] [navigator]: GoToPose request was accepted
+[INFO] [1764830249.253484429] [tb4_human_detector]: [Scan 24600] Robot at (12.99, 19.34), Near H1: no, Near H2: no
+[INFO] [1764830260.334099294] [tb4_human_detector]: [Scan 24700] Robot at (12.95, 16.96), Near H1: no, Near H2: no
+[INFO] [1764830271.601368175] [tb4_human_detector]: [Scan 24800] Robot at (12.70, 15.51), Near H1: no, Near H2: no
+[INFO] [1764830276.708225427] [navigator]: Task Go to Pose got result
+[ERROR] [1764830276.708265594] [navigator]: Goal was achieved
+[Main] ✓ Reached WP81 at (12.9873, 15.0379)
+[INFO] [1764830276.708382844] [tb4_human_detector]: [DEBUG] Scans: 24846, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3381
+[Main] Navigating to Waypoint 82/84 (13, 10)...
+[INFO] [1764830276.708411219] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830276.711142136] [navigator]: GoToPose request was accepted
+[INFO] [1764830282.864444847] [tb4_human_detector]: [Scan 24900] Robot at (12.97, 13.76), Near H1: no, Near H2: no
+[INFO] [1764830294.498533671] [tb4_human_detector]: [Scan 25000] Robot at (12.98, 11.59), Near H1: no, Near H2: no
+[INFO] [1764830305.541696927] [tb4_human_detector]: [Scan 25100] Robot at (13.06, 10.66), Near H1: no, Near H2: no
+[INFO] [1764830311.512617888] [navigator]: Task Go to Pose got result
+[ERROR] [1764830311.512684180] [navigator]: Goal was achieved
+[Main] ✓ Reached WP82 at (12.9899, 10.0126)
+[INFO] [1764830311.513114638] [tb4_human_detector]: [DEBUG] Scans: 25156, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3398
+[Main] Navigating to Waypoint 83/84 (-13, 20)...
+[INFO] [1764830311.513176388] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830311.514620888] [navigator]: GoToPose request was accepted
+[INFO] [1764830316.453618251] [tb4_human_detector]: [Scan 25200] Robot at (13.07, 10.92), Near H1: no, Near H2: no
+[INFO] [1764830327.362362715] [tb4_human_detector]: [Scan 25300] Robot at (11.03, 15.38), Near H1: no, Near H2: no
+[INFO] [1764830338.377803636] [tb4_human_detector]: [Scan 25400] Robot at (8.38, 19.65), Near H1: no, Near H2: no
+[INFO] [1764830349.351407544] [tb4_human_detector]: [Scan 25500] Robot at (4.11, 22.21), Near H1: no, Near H2: no
+[INFO] [1764830360.212713549] [tb4_human_detector]: [Scan 25600] Robot at (-0.54, 23.62), Near H1: no, Near H2: no
+[INFO] [1764830371.093188638] [tb4_human_detector]: [Scan 25700] Robot at (-5.06, 23.17), Near H1: no, Near H2: no
+[INFO] [1764830381.971373587] [tb4_human_detector]: [Scan 25800] Robot at (-7.92, 21.09), Near H1: no, Near H2: no
+[INFO] [1764830392.880307800] [tb4_human_detector]: [Scan 25900] Robot at (-10.86, 23.41), Near H1: no, Near H2: no
+[INFO] [1764830403.606374500] [tb4_human_detector]: [Scan 26000] Robot at (-13.05, 20.03), Near H1: no, Near H2: no
+[INFO] [1764830404.799857250] [navigator]: Task Go to Pose got result
+[ERROR] [1764830404.799916584] [navigator]: Goal was achieved
+[Main] ✓ Reached WP83 at (-13.1043, 19.9914)
+[INFO] [1764830404.800009292] [tb4_human_detector]: [DEBUG] Scans: 26012, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3402
+[Main] Navigating to Waypoint 84/84 (-13, 23)...
+[INFO] [1764830404.800034750] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764830404.801390709] [navigator]: GoToPose request was accepted
+[INFO] [1764830412.095749879] [navigator]: Task Go to Pose got result
+[ERROR] [1764830412.095806962] [navigator]: Goal was achieved
+[Main] ✓ Reached WP84 at (-13.1071, 22.572)
+[INFO] [1764830412.095881837] [tb4_human_detector]: [DEBUG] Scans: 26080, Near H1: 160 (hits: 0), Near H2: 989 (hits: 989), Clusters: 3403
+
+[Main] ========================================
+[Main] Warehouse scan complete!
+[Main] Generating detection report...
+[Main] ========================================
+
+[INFO] [1764830412.095899462] [tb4_human_detector]: ==========================================
+[INFO] [1764830412.095902420] [tb4_human_detector]:         HUMAN DETECTION REPORT            
+[INFO] [1764830412.095911712] [tb4_human_detector]: ==========================================
+[INFO] [1764830412.095913670] [tb4_human_detector]: Total scans: 26080
+[INFO] [1764830412.095916670] [tb4_human_detector]: Scans near H1 position: 160 (hits in 0 scans)
+[INFO] [1764830412.095918962] [tb4_human_detector]: Scans near H2 position: 989 (hits in 989 scans)
+[INFO] [1764830412.095927962] [tb4_human_detector]: H1 hit ratio when close: 0.00
+[INFO] [1764830412.095942004] [tb4_human_detector]: H2 hit ratio when close: 1.00
+[INFO] [1764830412.095989004] [tb4_human_detector]: [Human 1] MOVED from original (1.00, -1.00)
+[INFO] [1764830412.096087295] [tb4_human_detector]: [Human 2] STILL at original (-12.00, 15.00) ✓
+[INFO] [1764830412.096258545] [tb4_human_detector]: Total clusters: 3403, Valid human-sized: 345
+[INFO] [1764830412.096313545] [tb4_human_detector]: Top 10 human candidates:
+[INFO] [1764830412.096321504] [tb4_human_detector]:   [0] (-9.93, 9.75) - 4973 points
+[INFO] [1764830412.096336670] [tb4_human_detector]:   [1] (-1.93, -3.82) - 4940 points
+[INFO] [1764830412.096339670] [tb4_human_detector]:   [2] (0.13, 17.01) - 4934 points
+[INFO] [1764830412.096507587] [tb4_human_detector]:   [3] (-5.46, 10.44) - 4896 points
+[INFO] [1764830412.096605129] [tb4_human_detector]:   [4] (-10.77, 16.64) - 4886 points
+[INFO] [1764830412.096614504] [tb4_human_detector]:   [5] (-7.23, -7.36) - 4814 points
+[INFO] [1764830412.096617254] [tb4_human_detector]:   [6] (-7.79, -5.67) - 4775 points
+[INFO] [1764830412.096619629] [tb4_human_detector]:   [7] (-7.33, 15.54) - 4678 points
+[INFO] [1764830412.096768754] [tb4_human_detector]:   [8] (4.94, -9.72) - 4664 points
+[INFO] [1764830412.096826920] [tb4_human_detector]:   [9] (-7.88, 19.24) - 4591 points
+[INFO] [1764830412.096833337] [tb4_human_detector]: => Human 1 NEW LOCATION: (-9.93, 9.75) [4973 points]
