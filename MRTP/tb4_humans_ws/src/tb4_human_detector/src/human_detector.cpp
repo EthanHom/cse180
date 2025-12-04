@@ -69,7 +69,6 @@ public:
         }
         this->set_parameter(rclcpp::Parameter("use_sim_time", true));
 
-        // Initialize known static obstacles
         initializeKnownObstacles();
 
         map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
@@ -163,67 +162,122 @@ public:
         }
 
         // ================================================================
-        // IMPROVED: Filter out known static obstacles
+        // Score-based candidate selection
         // ================================================================
         RCLCPP_INFO(this->get_logger(), "------------------------------------------");
         RCLCPP_INFO(this->get_logger(), "Analyzing detections (filtering static obstacles)...");
 
-        std::vector<std::pair<double, double>> candidate_locations;
+        struct ScoredCandidate {
+            double x, y;
+            int hit_scans, total_scans;
+            double score;
+        };
+        
+        std::vector<ScoredCandidate> candidates;
         
         for (const auto& [key, detection] : dynamic_detections_) {
             if (detection.total_scans < 10) continue;
             if (detection.hit_scans < 3) continue;
             
             double ratio = detection.hit_ratio();
-            if (ratio < 0.05) continue;  // At least 5% hit rate
+            if (ratio < 0.05) continue;
             
             // FILTER 1: Away from original human positions
             double d1 = std::hypot(detection.x - human1_x_, detection.y - human1_y_);
             double d2 = std::hypot(detection.x - human2_x_, detection.y - human2_y_);
             if (d1 < 2.0 || d2 < 2.0) continue;
             
-            // FILTER 2: NOT a known static obstacle!
+            // FILTER 2: NOT a known static obstacle
             if (isKnownStaticObstacle(detection.x, detection.y)) {
-                continue;  // Skip shelves, tables, barriers, chairs
+                continue;
             }
             
-            // FILTER 3: Within reasonable bounds for human relocation
-            if (detection.x < -13.0 || detection.x > 13.0) continue;  // Outside expected area
+            // FILTER 3: Within reasonable bounds
+            if (detection.x < -13.0 || detection.x > 13.0) continue;
             if (detection.y < -20.0 || detection.y > 23.0) continue;
             
-            candidate_locations.push_back({detection.x, detection.y});
-            RCLCPP_INFO(this->get_logger(), 
-                "  Valid candidate: (%.2f, %.2f) - %d/%d scans (%.1f%%)",
-                detection.x, detection.y, 
-                detection.hit_scans, detection.total_scans, ratio * 100);
+            // FILTER 4: Away from warehouse edges
+            if (detection.x < -11.5 || detection.x > 12.0) continue;
+            if (detection.y < -19.0 || detection.y > 22.0) continue;
+            
+            // CALCULATE CONFIDENCE SCORE (0-100)
+            double score = 0.0;
+            
+            // Factor 1: Hit ratio (max 30 points)
+            score += ratio * 30.0;
+            
+            // Factor 2: Scan count (max 40 points, capped at 200 scans)
+            score += std::min(detection.hit_scans / 5.0, 40.0);
+            
+            // Factor 3: Distance from edges (max 30 points)
+            double edge_dist_x = std::min(detection.x + 11.5, 12.0 - detection.x);
+            double edge_dist_y = std::min(detection.y + 19.0, 22.0 - detection.y);
+            double min_edge_dist = std::min(edge_dist_x, edge_dist_y);
+            score += std::min(min_edge_dist * 3.0, 30.0);
+            
+            candidates.push_back({detection.x, detection.y, 
+                detection.hit_scans, detection.total_scans, score});
         }
 
-        // Cluster nearby candidates (merge close detections)
-        std::vector<std::pair<double, double>> clustered_locations;
-        for (const auto& loc : candidate_locations) {
+        // Sort by score (highest first)
+        std::sort(candidates.begin(), candidates.end(),
+            [](const ScoredCandidate &a, const ScoredCandidate &b) { 
+                return a.score > b.score; 
+            });
+
+        RCLCPP_INFO(this->get_logger(), "Found %zu candidates (before clustering)", candidates.size());
+
+        // Show top candidates
+        size_t to_show = std::min(candidates.size(), size_t(10));
+        if (to_show > 0) {
+            RCLCPP_INFO(this->get_logger(), "Top %zu candidates by score:", to_show);
+            for (size_t i = 0; i < to_show; ++i) {
+                RCLCPP_INFO(this->get_logger(), 
+                    "  [%zu] (%.2f, %.2f) - %d/%d scans, score: %.1f",
+                    i, candidates[i].x, candidates[i].y,
+                    candidates[i].hit_scans, candidates[i].total_scans,
+                    candidates[i].score);
+            }
+        }
+
+        // Cluster nearby candidates with weighted averaging
+        std::vector<ScoredCandidate> clustered;
+        for (const auto& cand : candidates) {
             bool merged = false;
-            for (auto& existing : clustered_locations) {
-                if (std::hypot(loc.first - existing.first, loc.second - existing.second) < 1.5) {
-                    existing.first = (existing.first + loc.first) / 2.0;
-                    existing.second = (existing.second + loc.second) / 2.0;
+            for (auto& existing : clustered) {
+                if (std::hypot(cand.x - existing.x, cand.y - existing.y) < 1.5) {
+                    // Weighted average (favor higher scores)
+                    double w1 = existing.score;
+                    double w2 = cand.score;
+                    double total_w = w1 + w2;
+                    existing.x = (existing.x * w1 + cand.x * w2) / total_w;
+                    existing.y = (existing.y * w1 + cand.y * w2) / total_w;
+                    existing.hit_scans += cand.hit_scans;
+                    existing.total_scans += cand.total_scans;
+                    existing.score = std::max(existing.score, cand.score);
                     merged = true;
                     break;
                 }
             }
             if (!merged) {
-                clustered_locations.push_back(loc);
+                clustered.push_back(cand);
             }
         }
 
-        RCLCPP_INFO(this->get_logger(), "Found %zu potential human locations (after filtering)", 
-            clustered_locations.size());
+        // Re-sort after clustering
+        std::sort(clustered.begin(), clustered.end(),
+            [](const ScoredCandidate &a, const ScoredCandidate &b) { 
+                return a.score > b.score; 
+            });
+
+        RCLCPP_INFO(this->get_logger(), "After clustering: %zu unique locations", clustered.size());
 
         // Report new locations
         if (!h1_present) {
-            if (!clustered_locations.empty()) {
+            if (!clustered.empty()) {
                 RCLCPP_INFO(this->get_logger(), 
-                    "=> Human 1 NEW LOCATION: (%.2f, %.2f) ✓",
-                    clustered_locations[0].first, clustered_locations[0].second);
+                    "=> Human 1 NEW LOCATION: (%.2f, %.2f) ✓ [score: %.1f, %d scans]",
+                    clustered[0].x, clustered[0].y, clustered[0].score, clustered[0].hit_scans);
             } else {
                 RCLCPP_WARN(this->get_logger(), "=> Human 1 new location: NOT FOUND");
             }
@@ -231,10 +285,10 @@ public:
 
         if (!h2_present) {
             size_t idx = h1_present ? 0 : 1;
-            if (idx < clustered_locations.size()) {
+            if (idx < clustered.size()) {
                 RCLCPP_INFO(this->get_logger(), 
-                    "=> Human 2 NEW LOCATION: (%.2f, %.2f) ✓",
-                    clustered_locations[idx].first, clustered_locations[idx].second);
+                    "=> Human 2 NEW LOCATION: (%.2f, %.2f) ✓ [score: %.1f, %d scans]",
+                    clustered[idx].x, clustered[idx].y, clustered[idx].score, clustered[idx].hit_scans);
             } else {
                 RCLCPP_WARN(this->get_logger(), "=> Human 2 new location: NOT FOUND");
             }
@@ -260,7 +314,6 @@ private:
     std::vector<Cluster> clusters_;
     std::map<std::pair<int,int>, LocationScan> dynamic_detections_;
     
-    // Known static obstacles
     std::vector<std::pair<double, double>> known_obstacles_;
 
     const double cluster_dist_thresh_ = 0.5;
@@ -281,7 +334,6 @@ private:
     std::atomic<int> scans_near_h2_{0};
 
     void initializeKnownObstacles() {
-        // All known static obstacles from the warehouse
         known_obstacles_ = {
             {-8.5, -13.0},   // SHELF_BIG_0
             {6.5, -13.0},    // SHELF_BIG_1
@@ -309,14 +361,14 @@ private:
     }
 
     bool isKnownStaticObstacle(double x, double y) const {
-        const double threshold = 2.0;  // Within 2m of a known obstacle
+        const double threshold = 2.0;
         for (const auto& obstacle : known_obstacles_) {
             double dist = std::hypot(x - obstacle.first, y - obstacle.second);
             if (dist < threshold) {
-                return true;  // This is a static obstacle
+                return true;
             }
         }
-        return false;  // Not near any known static obstacle - likely a human!
+        return false;
     }
 
     void amclCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
@@ -510,16 +562,51 @@ int main(int argc, char **argv) {
 
     std::cout << "[Main] Creating comprehensive coverage pattern..." << std::endl;
     
+    // ================================================================
+    // OPTIMIZED COVERAGE PATTERN
+    // Systematic zigzag with multi-angle approaches to key locations
+    // ================================================================
     std::vector<std::pair<double, double>> grid_pattern = {
+        // Bottom section
         {2.0, -18.0}, {-2.0, -18.0}, {-6.0, -18.0}, {-10.0, -18.0},
+        
+        // Rise up left side
         {-10.0, -12.0}, {-10.0, -6.0}, {-10.0, 0.0},
-        {-6.0, -2.0}, {-3.0, -1.0}, {0.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {3.0, 0.0},
-        {2.0, 2.0}, {3.0, 3.0}, {4.0, 2.0}, {5.0, 1.0}, {6.0, 2.0}, {6.0, 4.0}, 
-        {5.0, 5.0}, {4.0, 4.0}, {3.0, 4.0}, {5.0, 3.0},  // Multi-angle (5, 3)
+        
+        // H1 ORIGINAL - Multi-angle approach
+        {-6.0, -2.0}, {-3.0, -1.0}, {0.0, -1.0},   // West approach
+        {1.0, -1.0},                                // Direct check
+        {1.0, 1.0}, {3.0, 0.0},                     // East approach
+        
+        // H1 NEW LOCATION AREA - Multi-angle comprehensive coverage
+        {2.0, 2.0},   // SW approach
+        {3.0, 3.0},   // Closer SW
+        {4.0, 2.0},   // S approach  
+        {5.0, 1.0},   // SE approach
+        {6.0, 2.0},   // E approach
+        {6.0, 4.0},   // NE approach
+        {5.0, 5.0},   // N approach
+        {4.0, 4.0},   // NW approach
+        {3.0, 4.0},   // W approach
+        {5.0, 3.0},   // DIRECT CENTER (360° spin)
+        
+        // Continue middle coverage
         {8.0, 4.0}, {10.0, 6.0}, {10.0, 10.0},
+        
+        // Middle section  
         {6.0, 10.0}, {2.0, 10.0}, {-2.0, 10.0}, {-6.0, 10.0}, {-10.0, 10.0},
-        {-10.0, 12.0}, {-10.0, 14.0}, {-12.0, 13.0}, {-12.0, 15.0}, {-12.0, 17.0}, {-10.0, 16.0},
+        
+        // H2 ORIGINAL - Multi-angle approach
+        {-10.0, 12.0}, {-10.0, 14.0},               // S approach
+        {-12.0, 13.0},                               // SE approach
+        {-12.0, 15.0},                               // DIRECT CHECK (360° spin)
+        {-12.0, 17.0},                               // N approach
+        {-10.0, 16.0},                               // NE approach
+        
+        // Top section
         {-6.0, 18.0}, {-2.0, 20.0}, {2.0, 22.0}, {6.0, 20.0}, {8.0, 18.0},
+        
+        // Final sweep
         {4.0, 16.0}, {0.0, 16.0}, {-4.0, 16.0}, {-8.0, 16.0},
     };
     
@@ -529,30 +616,41 @@ int main(int argc, char **argv) {
         add_wp(x, y, 90.0);
     }
     
+    // 360° spins at critical locations
     std::vector<int> spin_at_waypoints;
+    
     for (size_t i = 0; i < grid_pattern.size(); ++i) {
         double x = grid_pattern[i].first;
         double y = grid_pattern[i].second;
         
+        // Spin at H1 original
         if (std::hypot(x - 1.0, y + 1.0) < 0.5) {
             spin_at_waypoints.push_back(i);
             std::cout << "[Main] 360° at WP" << i << " (H1 original)" << std::endl;
         }
+        
+        // Spin at H1 new location area (5, 3)
         if (std::hypot(x - 5.0, y - 3.0) < 0.5) {
             spin_at_waypoints.push_back(i);
             std::cout << "[Main] 360° at WP" << i << " (H1 new @ 5,3)" << std::endl;
         }
+        
+        // Spin at H2 original
         if (std::hypot(x + 12.0, y - 15.0) < 0.5) {
             spin_at_waypoints.push_back(i);
             std::cout << "[Main] 360° at WP" << i << " (H2 original)" << std::endl;
         }
     }
 
+    // Execute navigation
     for (size_t i = 0; i < waypoints.size(); ++i) {
         auto goal = std::make_shared<geometry_msgs::msg::Pose>(waypoints[i].pose);
-        std::cout << "[Main] -> WP" << (i+1) << "/" << waypoints.size() << std::endl;
+        std::cout << "[Main] -> WP" << (i+1) << "/" << waypoints.size() 
+                  << " (" << grid_pattern[i].first << ", " << grid_pattern[i].second << ")" 
+                  << std::endl;
         
         navigator.GoToPose(goal);
+        
         while (rclcpp::ok() && !navigator.IsTaskComplete()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -560,6 +658,7 @@ int main(int argc, char **argv) {
         if (navigator.GetResult() == rclcpp_action::ResultCode::SUCCEEDED) {
             std::cout << "[Main] ✓ WP" << (i+1) << std::endl;
             
+            // Perform 360° spin at critical waypoints
             if (std::find(spin_at_waypoints.begin(), spin_at_waypoints.end(), i) 
                 != spin_at_waypoints.end()) {
                 std::cout << "[Main] Spinning 360°..." << std::endl;
@@ -570,13 +669,19 @@ int main(int argc, char **argv) {
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
             
-            if ((i+1) % 10 == 0) detector->printDebugInfo();
+            if ((i+1) % 10 == 0) {
+                detector->printDebugInfo();
+            }
+            
         } else {
-            std::cerr << "[Main] ✗ Failed WP" << (i+1) << std::endl;
+            std::cerr << "[Main] ✗ Failed WP" << (i+1) << " - continuing..." << std::endl;
         }
     }
 
-    std::cout << "\n========== SCAN COMPLETE ==========" << std::endl;
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "WAREHOUSE SCAN COMPLETE!" << std::endl;
+    std::cout << "========================================\n" << std::endl;
+    
     detector->reportHumans();
     
     rclcpp::shutdown();
