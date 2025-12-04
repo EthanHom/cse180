@@ -1,73 +1,282 @@
 Does this implementation follow what the MRTP textbook would recommend? Is this implementation also correct?
 
 
-Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
-If you choose to work individually, no registration is required. Any student not listed on a team will automatically be considered to be working alone.
-All teams must be registered by December 5.
-Project presentations will take place during the last week of classes.
-Individual projects: Present during your assigned lab section.
-Team projects: Present in any of the lab sections assigned to your team (no exceptions).
-=============================================================================================
-First, make sure to get the latest version of the MRTP repository, because the files for the final project have just been added. After having rebuilt the MRTP workspace, you can launch the simulation environment as follows: 
-ros2 launch gazeboenvs tb4_warehouse.launch.py
-If you want to run both gazebo and rviz (useful for debugging), use the following command:
-ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
-Note that the robot starts with pose x=2.12, y=-21.3 and yaw = 1.57 (radians). The localization algorithm is initialized with these values.
-As you can see from Gazebo and Rviz, the robot is operating in a warehouse environment in which there are two stationary human characters. The footprint of the humans is included in the map loaded in gazebo, and available to the robot through the /map topic. Your task is to write a controller for the robot to determine
-if the humans have move to a different location;
-in case they have moved, determine where they are. Note that if the characters have moved, the will be permanently relocated at a different position, but they will not keep moving.
-To solve this problem you should:
-use the navigation library provided in class to move the robot in the environment using the nav2 stack
-retrieve the map of the environment from /map
-use the range finder on top of the robot to check if the environment have changed (e.g., if the humans have moved).
-use the topic amcl_pose to retrieve the position of the robot in the environment
-Deliverables:
-zipped file with code (included in a self contained workspace); to be uploaded to catcourses;
-one pager description of the solution (pdf); to be uploaded to catcourses;
-presentation with demo to be given during lab hours.
- 
-Q&A:
-Q: What does it mean that I have to submit a fully contained file?
-A: It means that the zipped file you submit must have a workspace, and inside the workspace it must have all code you developed (located in a suitable package). If your code relies on additional ros2 standard packages (i.e., packages that can be installed with atp install) you should list them. If the packages are not standard (e.g., downloaded from github), please include them in your submission. 
-Q: How can I alter the position of the characters to test if my solution works?
-A: Start the simulation environment in Gazebo and identify the character you intend to move. Click on it with the mouse to select it. A white parallelepiped will appear around the character, indicating that it has been selected. In the upper right corner of the screen, open the “Pose” menu. From there, you can modify the character’s x, y, and z coordinates, as well as its roll, pitch, and yaw. Please note that changes take effect only after you press the Tab key or select a different item in the menu.
+Directions: 
+    Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
 
+    If you choose to work individually, no registration is required. Any student not listed on a team will automatically be considered to be working alone.
+
+    All teams must be registered by December 5.
+
+    Project presentations will take place during the last week of classes.
+
+    Individual projects: Present during your assigned lab section.
+
+    Team projects: Present in any of the lab sections assigned to your team (no exceptions).
+
+    =============================================================================================
+
+    First, make sure to get the latest version of the MRTP repository, because the files for the final project have just been added. After having rebuilt the MRTP workspace, you can launch the simulation environment as follows: 
+
+    ros2 launch gazeboenvs tb4_warehouse.launch.py
+    If you want to run both gazebo and rviz (useful for debugging), use the following command:
+
+    ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
+    Note that the robot starts with pose x=2.12, y=-21.3 and yaw = 1.57 (radians). The localization algorithm is initialized with these values.
+
+    As you can see from Gazebo and Rviz, the robot is operating in a warehouse environment in which there are two stationary human characters. The footprint of the humans is included in the map loaded in gazebo, and available to the robot through the /map topic. Your task is to write a controller for the robot to determine
+
+    if the humans have move to a different location;
+    in case they have moved, determine where they are. Note that if the characters have moved, the will be permanently relocated at a different position, but they will not keep moving.
+    To solve this problem you should:
+
+    use the navigation library provided in class to move the robot in the environment using the nav2 stack
+    retrieve the map of the environment from /map
+    use the range finder on top of the robot to check if the environment have changed (e.g., if the humans have moved).
+    use the topic amcl_pose to retrieve the position of the robot in the environment
+    Deliverables:
+
+    zipped file with code (included in a self contained workspace); to be uploaded to catcourses;
+    one pager description of the solution (pdf); to be uploaded to catcourses;
+    presentation with demo to be given during lab hours.
+    
+
+    Q&A:
+
+    Q: What does it mean that I have to submit a fully contained file?
+    A: It means that the zipped file you submit must have a workspace, and inside the workspace it must have all code you developed (located in a suitable package). If your code relies on additional ros2 standard packages (i.e., packages that can be installed with atp install) you should list them. If the packages are not standard (e.g., downloaded from github), please include them in your submission. 
+    Q: How can I alter the position of the characters to test if my solution works?
+    A: Start the simulation environment in Gazebo and identify the character you intend to move. Click on it with the mouse to select it. A white parallelepiped will appear around the character, indicating that it has been selected. In the upper right corner of the screen, open the “Pose” menu. From there, you can modify the character’s x, y, and z coordinates, as well as its roll, pitch, and yaw. Please note that changes take effect only after you press the Tab key or select a different item in the menu.
+    Q: I want to know that if our entire group must be present during the demo and presentation. We all have different sections that conflict with other classes so we would have to forego one of our other responsibilities to make it to any of the other lab sections.
+    A: It is not necessary for the entire team to be present during the demo and presentation. One (or two) of you can make the presentation during any of the lab sections you registered for.
+    Q: What is the format of the presentation?
+    A: You build and run the code in front of the TA and describe how you solved the problem, answering any question the TA may have. The presentation is not in front of the class and you do not have to present slides.
 
 KNOWN OBSTACTLES:
-SHELF_BIG_0: (x: -8.5, y: -13)
-SHELF_BIG_1: (x: 6.5, y: -13)
-SHELF_BIG_2: (x: -1.5, y: -13)
-SHELF_3: (x: 13.5, y: 4.5)
-SHELF_4: (x: 10, y: 4.5)
-SHELF_5: (x: 13.5, y: -21)
-SHELF_6: (x: 13.5, y: -15)
-SHELF_7: (x: 0.4, y: -2)
-SHELF_BIG_3: (x: 3.5, y: 9.5, yaw(rad): 1.57)
-SHELF_BIG_4: (x: -1.3, y: 18.5, yaw(rad): 1.57)
-SHELF_0: (x: -10, y: 21.5, yaw(rad): 1.57)
-SHELF_1: (x: -7, y: 23.6, yaw(rad): 1.57)
-SHELF_2: (x: -4, y: 21.5, yaw(rad): 1.57)
-BARRIER_0: (x: -10.4, y: 14.75, yaw(rad): 1.57)
-BARRIER_1: (x: -10.4, y: 10.5, yaw(rad): 1.57)
-BARRIER_2: (x: -10.4, y: 6.5, yaw(rad): 1.57)
-BARRIER_3: (x: -12.85, y: 4.85)
-CHAIR_0: (x: 14.3, y: -5.5, yaw(rad): 3)
-CHAIR_1: (x: 14.3, y: -4, yaw(rad): -3)
-FCHAIR_0: (x: -11.5, y: 6.4, yaw(rad): -1.8)
-FCHAIR1: (x: -14, y: 6.5, yaw(rad): 1.9)
-TABLE0: (x: -12.7, y: 6.5)
+    SHELF_BIG_0: (x: -8.5, y: -13)
+    SHELF_BIG_1: (x: 6.5, y: -13)
+    SHELF_BIG_2: (x: -1.5, y: -13)
+    SHELF_3: (x: 13.5, y: 4.5)
+    SHELF_4: (x: 10, y: 4.5)
+    SHELF_5: (x: 13.5, y: -21)
+    SHELF_6: (x: 13.5, y: -15)
+    SHELF_7: (x: 0.4, y: -2)
+    SHELF_BIG_3: (x: 3.5, y: 9.5, yaw(rad): 1.57)
+    SHELF_BIG_4: (x: -1.3, y: 18.5, yaw(rad): 1.57)
+    SHELF_0: (x: -10, y: 21.5, yaw(rad): 1.57)
+    SHELF_1: (x: -7, y: 23.6, yaw(rad): 1.57)
+    SHELF_2: (x: -4, y: 21.5, yaw(rad): 1.57)
+    BARRIER_0: (x: -10.4, y: 14.75, yaw(rad): 1.57)
+    BARRIER_1: (x: -10.4, y: 10.5, yaw(rad): 1.57)
+    BARRIER_2: (x: -10.4, y: 6.5, yaw(rad): 1.57)
+    BARRIER_3: (x: -12.85, y: 4.85)
+    CHAIR_0: (x: 14.3, y: -5.5, yaw(rad): 3)
+    CHAIR_1: (x: 14.3, y: -4, yaw(rad): -3)
+    FCHAIR_0: (x: -11.5, y: 6.4, yaw(rad): -1.8)
+    FCHAIR1: (x: -14, y: 6.5, yaw(rad): 1.9)
+    TABLE0: (x: -12.7, y: 6.5)
 
 
-Corners of the warehouse (estimated):
-(-14, 24)
-(14, 24)
-(-14, -24)
-(14, -24)
+Corners of the warehouse (estimated and based on my screenshot of map):
+    (-14, 24) - TOP LEFT 
+    (14, 24) - TOP RIGHT
+    (-14, -24) - BOTTOM LEFT
+    (14, -24) - BOTTOM RIGHT
+    (in the middle of the grid, that is (0,0).)
 
-
+My Note:
+    How I generated map details:
+        ethan@Mac docker % make shell
+        docker exec -it ae507374fa1a bash
+        (.venv) root@docker-desktop:/MRTP# cd MRTP/
+        (.venv) root@docker-desktop:/MRTP/MRTP# source install/setup.bash 
+        (.venv) root@docker-desktop:/MRTP/MRTP# ros2 run nav2_map_server map_saver_cli -f ~/my_warehouse_map
+        (.venv) root@docker-desktop:/MRTP/MRTP# cd /root
+        (.venv) root@docker-desktop:~# ls -la my_warehouse_map.*
+        (.venv) root@docker-desktop:~# cp my_warehouse_map.* /MRTP/MRTP/
 
 Terminal Results:
-(For Human 1 who has not moved)
+(For Humans who has not moved)
+(.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+[INFO] [1764887735.071604925] [tb4_human_detector]: HumanDetector initialized with 22 known obstacles.
+[INFO] [1764887735.104613592] [navigator]: Created instance of Navigator
+
+[WARN] [1764887735.104937800] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+[Main] Waiting for map...
+[INFO] [1764887735.386991426] [tb4_human_detector]: Map received: 1006x1674 @ 0.030m/px
+[Main] Map received!
+
+[INFO] [1764887737.408590885] [tb4_human_detector]: Detection counters reset.
+[INFO] [1764887737.408692302] [navigator]: Inside SetInitialPose
+[INFO] [1764887737.408765260] [navigator]: Waiting for Nav2 to activate...
+[INFO] [1764887737.408775843] [navigator]: Waiting for amcl
+[INFO] [1764887737.416206468] [navigator]: amcl active
+[INFO] [1764887737.419244635] [navigator]: acml is ready
+[INFO] [1764887737.419279593] [navigator]: Waiting for initial pose
+[INFO] [1764887737.498149760] [navigator]: initial pose is received
+[INFO] [1764887737.498209593] [navigator]: Waiting for bt_navigator
+[INFO] [1764887737.503822427] [navigator]: bt_navigator active
+[INFO] [1764887737.505174427] [navigator]: bt_navigator is ready
+[INFO] [1764887737.505206552] [navigator]: Nav2 is ready!
+========================================
+   MAP-OPTIMIZED COVERAGE WAYPOINTS
+========================================
+Map: 1006×1674 @ 0.03m/px
+Area: 30m × 50m warehouse
+Strategy: Corridor-following coverage
+========================================
+
+Generating optimal waypoints:
+
+[Main] Generated 14 waypoints
+
+  WP1: (7, -17) - South-East corridor
+  WP2: (3, -15) - East-Center shelf corridor
+  WP3: (-2, -15) - Center-West shelf corridor
+  WP4: (-8, -17) - South-West corridor
+  WP5: (-5, -5) - West-Center area
+  WP6: (1, -1) - ★ H1 ORIGINAL (1, -1)
+  WP7: (5, -5) - East-Center area
+  WP8: (0, 5) - Center open area
+  WP9: (8, 12) - North-East area
+  WP10: (-10, 15) - West corridor (H2 vicinity)
+  WP11: (-12, 18) - ★ H2 ORIGINAL (-12, 15)
+  WP12: (0, 18) - North-Center
+  WP13: (10, 5) - East edge mid
+  WP14: (10, -10) - East edge south
+
+[Main] Will perform 360° spin at 3 strategic locations (H1 & H2 originals)
+
+Estimated completion time: 10-15 minutes
+
+========================================
+
+[WP 1/14] South-East corridor | 0:00 elapsed
+[INFO] [1764887737.505454677] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887737.507965718] [navigator]: GoToPose request was accepted
+[INFO] [1764887771.951696554] [navigator]: Task Go to Pose got result
+[ERROR] [1764887771.951780095] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 2/14] East-Center shelf corridor | 0:34 elapsed
+[INFO] [1764887771.951917637] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887771.953389595] [navigator]: GoToPose request was accepted
+[INFO] [1764887813.465350337] [navigator]: Task Go to Pose got result
+[ERROR] [1764887813.465380628] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 3/14] Center-West shelf corridor | 1:15 elapsed
+[INFO] [1764887813.465510462] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887813.466042837] [navigator]: GoToPose request was accepted
+[INFO] [1764887833.489012638] [navigator]: Task Go to Pose got result
+[ERROR] [1764887833.490137846] [navigator]: Goal was aborted
+  ✗ Navigation failed
+[WP 4/14] South-West corridor | 1:35 elapsed
+[INFO] [1764887833.490215971] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887833.491152096] [navigator]: GoToPose request was accepted
+[INFO] [1764887884.463198300] [navigator]: Task Go to Pose got result
+[ERROR] [1764887884.463312967] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 5/14] West-Center area | 2:26 elapsed
+[INFO] [1764887884.463507633] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887884.465655633] [navigator]: GoToPose request was accepted
+[INFO] [1764887914.827441050] [navigator]: Task Go to Pose got result
+[ERROR] [1764887914.827481092] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 6/14] ★ H1 ORIGINAL (1, -1) | 2:57 elapsed
+[INFO] [1764887914.827596925] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887914.828721967] [navigator]: GoToPose request was accepted
+[INFO] [1764887953.823906721] [navigator]: Task Go to Pose got result
+[ERROR] [1764887953.823998055] [navigator]: Goal was achieved
+  ✓ Reached successfully
+  → Performing 360° scan...
+[INFO] [1764887953.824134763] [navigator]: Waiting for Spin action server
+[INFO] [1764887953.825962596] [navigator]: In task Spin response callback
+[INFO] [1764887953.825986138] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764887953.826216388] [navigator]: Spin request was accepted
+[INFO] [1764887955.646901139] [navigator]: Task Spin got result
+[ERROR] [1764887955.646933555] [navigator]: Goal was achieved
+[WP 7/14] East-Center area | 3:38 elapsed
+[INFO] [1764887955.848832708] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887955.849516708] [navigator]: GoToPose request was accepted
+[INFO] [1764887978.489598594] [navigator]: Task Go to Pose got result
+[ERROR] [1764887978.489901094] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 8/14] Center open area | 4:00 elapsed
+[INFO] [1764887978.490064219] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764887978.491589469] [navigator]: GoToPose request was accepted
+[INFO] [1764888004.652773300] [navigator]: Task Go to Pose got result
+[ERROR] [1764888004.652807967] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 9/14] North-East area | 4:27 elapsed
+[INFO] [1764888004.652877425] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888004.653997884] [navigator]: GoToPose request was accepted
+[INFO] [1764888056.614073088] [navigator]: Task Go to Pose got result
+[ERROR] [1764888056.614132380] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 10/14] West corridor (H2 vicinity) | 5:19 elapsed
+[INFO] [1764888056.614248755] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888056.615224296] [navigator]: GoToPose request was accepted
+[INFO] [1764888099.691077136] [navigator]: Task Go to Pose got result
+[ERROR] [1764888099.692939303] [navigator]: Goal was achieved
+  ✓ Reached successfully
+  → Performing 360° scan...
+[INFO] [1764888099.693013178] [navigator]: Waiting for Spin action server
+[INFO] [1764888099.694337678] [navigator]: In task Spin response callback
+[INFO] [1764888099.694358803] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764888099.694499761] [navigator]: Spin request was accepted
+[INFO] [1764888101.802962845] [navigator]: Task Spin got result
+[ERROR] [1764888101.803053387] [navigator]: Goal was achieved
+[WP 11/14] ★ H2 ORIGINAL (-12, 15) | 6:04 elapsed
+[INFO] [1764888102.006276304] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888102.008745345] [navigator]: GoToPose request was accepted
+[INFO] [1764888261.639710086] [navigator]: Task Go to Pose got result
+[ERROR] [1764888261.639800294] [navigator]: Goal was achieved
+  ✓ Reached successfully
+  → Performing 360° scan...
+[INFO] [1764888261.639957669] [navigator]: Waiting for Spin action server
+[INFO] [1764888261.642785086] [navigator]: In task Spin response callback
+[INFO] [1764888261.642839586] [navigator]: Goal accepted by server, waiting for result
+[INFO] [1764888261.643308294] [navigator]: Spin request was accepted
+[INFO] [1764888263.744248837] [navigator]: Task Spin got result
+[ERROR] [1764888263.744371170] [navigator]: Goal was achieved
+[WP 12/14] North-Center | 8:46 elapsed
+[INFO] [1764888263.953306378] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888263.963266378] [navigator]: GoToPose request was accepted
+[INFO] [1764888283.432176513] [navigator]: Task Go to Pose got result
+[ERROR] [1764888283.432244554] [navigator]: Goal was aborted
+  ✗ Navigation failed
+[WP 13/14] East edge mid | 9:05 elapsed
+[INFO] [1764888283.432344054] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888283.433039388] [navigator]: GoToPose request was accepted
+[INFO] [1764888392.600575841] [navigator]: Task Go to Pose got result
+[ERROR] [1764888392.600690008] [navigator]: Goal was achieved
+  ✓ Reached successfully
+[WP 14/14] East edge south | 10:55 elapsed
+[INFO] [1764888392.601086091] [navigator]: Waiting for NavigateToGoal action server
+[INFO] [1764888392.602557299] [navigator]: GoToPose request was accepted
+[INFO] [1764888439.319306084] [navigator]: Task Go to Pose got result
+[ERROR] [1764888439.319341709] [navigator]: Goal was achieved
+  ✓ Reached successfully
+
+========================================
+     WAREHOUSE COVERAGE COMPLETE
+========================================
+Waypoints completed: 12/14 (85%)
+Failed attempts: 2
+Total runtime: 11m 41s
+========================================
+
+[INFO] [1764888439.319461793] [tb4_human_detector]: ==========================================
+[INFO] [1764888439.319504793] [tb4_human_detector]:         HUMAN DETECTION REPORT            
+[INFO] [1764888439.319512293] [tb4_human_detector]: ==========================================
+[INFO] [1764888439.319514793] [tb4_human_detector]: H1 original (1.00, -1.00): 456/456 scans (100.0%)
+[INFO] [1764888439.319530959] [tb4_human_detector]: H2 original (-12.00, 15.00): 0/56 scans (0.0%)
+[INFO] [1764888439.319534709] [tb4_human_detector]: [Human 1] STILL at (1.00, -1.00) ✓
+[INFO] [1764888439.319537584] [tb4_human_detector]: [Human 2] MOVED from (-12.00, 15.00)
+[INFO] [1764888439.319540709] [tb4_human_detector]: ------------------------------------------
+[INFO] [1764888439.319544543] [tb4_human_detector]: Analyzing obstacle detections for moved humans...
+[INFO] [1764888439.323732210] [tb4_human_detector]: Found 93 potential human locations
+[INFO] [1764888439.323797168] [tb4_human_detector]: => Human 2 NEW LOCATION: (-10.17, 17.77) [23409 detections]
+[INFO] [1764888439.323808626] [tb4_human_detector]: ==========================================
 
 
 (For Human 1 who has moved to (5,3)) (By the way, 5,3 is just an example place I have been putting human 1, it can move anywhere)
