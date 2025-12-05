@@ -19,13 +19,12 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v3
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR (BALANCED)
 // 
 // Updates:
-// 1. Fixed "Ghost" detections by treating Map Values > 50 as walls (not just == 100).
-// 2. Treats Unknown Space (-1) as walls.
-// 3. Increased detection threshold (Need 40 hits to trigger investigation).
-// 4. Continues autonomous search if false positives are cleared.
+// 1. Wall Buffer optimized to ~35cm (12 cells). Handles drift without blinding the robot to
+//    humans standing near walls.
+// 2. Relies on the "Drive & Verify" step to rule out stubborn map ghosts.
 // =============================================================================================
 
 #include <memory>
@@ -83,7 +82,7 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Robust Human Detector Initialized.");
+        RCLCPP_INFO(this->get_logger(), "Balanced Human Detector Initialized.");
     }
 
     bool hasMap() const { return have_map_.load(); }
@@ -96,13 +95,12 @@ public:
         return (scans_near_h2_ > 20 && ((double)h2_hits_ / scans_near_h2_) > 0.1); 
     }
 
-    // Get best candidate for investigation
     std::pair<double, double> getBestNewCandidate() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // INCREASED THRESHOLD: Ignore small noise clusters (need 40+ hits)
+            // Threshold: 40 hits ensures it's a solid object
             if (count < 40) continue; 
             
             double wx = coord.first / 10.0; 
@@ -127,7 +125,6 @@ public:
         for (auto it = dynamic_obstacles_.begin(); it != dynamic_obstacles_.end();) {
             double wx = it->first.first / 10.0;
             double wy = it->first.second / 10.0;
-            // Clear larger radius to ensure ghost is gone
             if (std::hypot(wx - x, wy - y) < 2.0) {
                 it = dynamic_obstacles_.erase(it);
             } else {
@@ -136,7 +133,6 @@ public:
         }
     }
 
-    // Helper to check map value
     int8_t getMapValue(double x, double y) {
         std::lock_guard<std::mutex> lock(map_mutex_);
         if (!have_map_) return -1;
@@ -316,12 +312,16 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            int check_rad = 10; 
+            // [OPTIMIZED] WALL BUFFER
+            // 12 cells * 0.03m = 36cm radius.
+            // This is a balanced value: Small enough to detect humans 0.4m from a wall,
+            // but large enough to ignore minor AMCL drift against poles.
+            int check_rad = 12; 
+            
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
                     int idx = (gy + dy) * map_.info.width + (gx + dx);
                     
-                    // FIXED MAP CHECK: Treat > 50 (inflation) and -1 (unknown) as walls
                     if (idx >= 0 && idx < (int)map_.data.size()) {
                         int8_t val = map_.data[idx];
                         if (val > 50 || val == -1) {
