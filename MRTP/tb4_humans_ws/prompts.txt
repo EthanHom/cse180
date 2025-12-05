@@ -1,0 +1,21 @@
+This is everything I have right now. I'd like to try autonomous coverage algorithm 
+    because I want the robot to use the map's data and generate its own path to cover 
+    all the free space and check if each human as moved and where their new 
+    coordinates are if they have moved.
+
+
+My Note:
+    How I generated map details:
+        ethan@Mac docker % make shell
+        docker exec -it ae507374fa1a bash
+        (.venv) root@docker-desktop:/MRTP# cd MRTP/
+        (.venv) root@docker-desktop:/MRTP/MRTP# source install/setup.bash 
+        (.venv) root@docker-desktop:/MRTP/MRTP# ros2 run nav2_map_server map_saver_cli -f ~/my_warehouse_map
+        (.venv) root@docker-desktop:/MRTP/MRTP# cd /root
+        (.venv) root@docker-desktop:~# ls -la my_warehouse_map.*
+        (.venv) root@docker-desktop:~# cp my_warehouse_map.* /MRTP/MRTP/
+
+
+If it is correct, how can we improve to make it more efficient and faster? 
+    If it isn't correct, provide all the code for human_detector.cpp to make 
+    it work.

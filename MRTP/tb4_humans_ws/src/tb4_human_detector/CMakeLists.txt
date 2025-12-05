@@ -19,11 +19,16 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
+# find_package(nav2_msgs REQUIRED)
 find_package(navigation REQUIRED)
 
 add_executable(human_detector_node
   src/human_detector.cpp)
+
+find_package(visualization_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+
+# add_executable(human_detector_mapdiff src/human_detector_mapdiff_node.cpp)
 
 ament_target_dependencies(human_detector_node
   rclcpp
@@ -33,8 +38,12 @@ ament_target_dependencies(human_detector_node
   tf2
   tf2_ros
   tf2_geometry_msgs
-  nav2_msgs
-  navigation)
+  # nav2_msgs
+  navigation
+
+  visualization_msgs
+  rclcpp_action
+  )
 
 install(TARGETS
   human_detector_node

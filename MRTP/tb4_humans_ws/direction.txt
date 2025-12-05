@@ -1,5 +1,11 @@
-Does this implementation follow what the MRTP textbook would recommend? Is this implementation also correct?
+My questions:
+    Does this implementation follow what the MRTP textbook would recommend? 
+    Is this implementation also correct?
+    Are the results from the terminal correct?
+    Can we also add a timer in to see how long it takes to complete?
+    To make the program faster, can we move the robot directly to the humans and check if they are there, if they are not there, then use the map amd autonomous coverage algorithm to cover all free space and check where the humans went?
 
+Note: There’s a possibility your scanning results may be off if you’re using the laser scanner because it’s rotated 90 deg from the robot, it’s not perfectly straight
 
 Directions: 
     Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
@@ -76,7 +82,6 @@ KNOWN OBSTACTLES:
     FCHAIR1: (x: -14, y: 6.5, yaw(rad): 1.9)
     TABLE0: (x: -12.7, y: 6.5)
 
-
 Corners of the warehouse (estimated and based on my screenshot of map):
     (-14, 24) - TOP LEFT 
     (14, 24) - TOP RIGHT
@@ -84,208 +89,22 @@ Corners of the warehouse (estimated and based on my screenshot of map):
     (14, -24) - BOTTOM RIGHT
     (in the middle of the grid, that is (0,0).)
 
-My Note:
-    How I generated map details:
-        ethan@Mac docker % make shell
-        docker exec -it ae507374fa1a bash
-        (.venv) root@docker-desktop:/MRTP# cd MRTP/
-        (.venv) root@docker-desktop:/MRTP/MRTP# source install/setup.bash 
-        (.venv) root@docker-desktop:/MRTP/MRTP# ros2 run nav2_map_server map_saver_cli -f ~/my_warehouse_map
-        (.venv) root@docker-desktop:/MRTP/MRTP# cd /root
-        (.venv) root@docker-desktop:~# ls -la my_warehouse_map.*
-        (.venv) root@docker-desktop:~# cp my_warehouse_map.* /MRTP/MRTP/
+Where Humans are located:
+    human1 - (1.00, -1.00)
+    human2 - (-12.00, 15.00)
+
 
 Terminal Results:
-(For Humans who has not moved)
-(.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-[INFO] [1764887735.071604925] [tb4_human_detector]: HumanDetector initialized with 22 known obstacles.
-[INFO] [1764887735.104613592] [navigator]: Created instance of Navigator
-
-[WARN] [1764887735.104937800] [tf2_buffer]: Detected time source change. Clearing TF buffer.
-[Main] Waiting for map...
-[INFO] [1764887735.386991426] [tb4_human_detector]: Map received: 1006x1674 @ 0.030m/px
-[Main] Map received!
-
-[INFO] [1764887737.408590885] [tb4_human_detector]: Detection counters reset.
-[INFO] [1764887737.408692302] [navigator]: Inside SetInitialPose
-[INFO] [1764887737.408765260] [navigator]: Waiting for Nav2 to activate...
-[INFO] [1764887737.408775843] [navigator]: Waiting for amcl
-[INFO] [1764887737.416206468] [navigator]: amcl active
-[INFO] [1764887737.419244635] [navigator]: acml is ready
-[INFO] [1764887737.419279593] [navigator]: Waiting for initial pose
-[INFO] [1764887737.498149760] [navigator]: initial pose is received
-[INFO] [1764887737.498209593] [navigator]: Waiting for bt_navigator
-[INFO] [1764887737.503822427] [navigator]: bt_navigator active
-[INFO] [1764887737.505174427] [navigator]: bt_navigator is ready
-[INFO] [1764887737.505206552] [navigator]: Nav2 is ready!
-========================================
-   MAP-OPTIMIZED COVERAGE WAYPOINTS
-========================================
-Map: 1006×1674 @ 0.03m/px
-Area: 30m × 50m warehouse
-Strategy: Corridor-following coverage
-========================================
-
-Generating optimal waypoints:
-
-[Main] Generated 14 waypoints
-
-  WP1: (7, -17) - South-East corridor
-  WP2: (3, -15) - East-Center shelf corridor
-  WP3: (-2, -15) - Center-West shelf corridor
-  WP4: (-8, -17) - South-West corridor
-  WP5: (-5, -5) - West-Center area
-  WP6: (1, -1) - ★ H1 ORIGINAL (1, -1)
-  WP7: (5, -5) - East-Center area
-  WP8: (0, 5) - Center open area
-  WP9: (8, 12) - North-East area
-  WP10: (-10, 15) - West corridor (H2 vicinity)
-  WP11: (-12, 18) - ★ H2 ORIGINAL (-12, 15)
-  WP12: (0, 18) - North-Center
-  WP13: (10, 5) - East edge mid
-  WP14: (10, -10) - East edge south
-
-[Main] Will perform 360° spin at 3 strategic locations (H1 & H2 originals)
-
-Estimated completion time: 10-15 minutes
-
-========================================
-
-[WP 1/14] South-East corridor | 0:00 elapsed
-[INFO] [1764887737.505454677] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887737.507965718] [navigator]: GoToPose request was accepted
-[INFO] [1764887771.951696554] [navigator]: Task Go to Pose got result
-[ERROR] [1764887771.951780095] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 2/14] East-Center shelf corridor | 0:34 elapsed
-[INFO] [1764887771.951917637] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887771.953389595] [navigator]: GoToPose request was accepted
-[INFO] [1764887813.465350337] [navigator]: Task Go to Pose got result
-[ERROR] [1764887813.465380628] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 3/14] Center-West shelf corridor | 1:15 elapsed
-[INFO] [1764887813.465510462] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887813.466042837] [navigator]: GoToPose request was accepted
-[INFO] [1764887833.489012638] [navigator]: Task Go to Pose got result
-[ERROR] [1764887833.490137846] [navigator]: Goal was aborted
-  ✗ Navigation failed
-[WP 4/14] South-West corridor | 1:35 elapsed
-[INFO] [1764887833.490215971] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887833.491152096] [navigator]: GoToPose request was accepted
-[INFO] [1764887884.463198300] [navigator]: Task Go to Pose got result
-[ERROR] [1764887884.463312967] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 5/14] West-Center area | 2:26 elapsed
-[INFO] [1764887884.463507633] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887884.465655633] [navigator]: GoToPose request was accepted
-[INFO] [1764887914.827441050] [navigator]: Task Go to Pose got result
-[ERROR] [1764887914.827481092] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 6/14] ★ H1 ORIGINAL (1, -1) | 2:57 elapsed
-[INFO] [1764887914.827596925] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887914.828721967] [navigator]: GoToPose request was accepted
-[INFO] [1764887953.823906721] [navigator]: Task Go to Pose got result
-[ERROR] [1764887953.823998055] [navigator]: Goal was achieved
-  ✓ Reached successfully
-  → Performing 360° scan...
-[INFO] [1764887953.824134763] [navigator]: Waiting for Spin action server
-[INFO] [1764887953.825962596] [navigator]: In task Spin response callback
-[INFO] [1764887953.825986138] [navigator]: Goal accepted by server, waiting for result
-[INFO] [1764887953.826216388] [navigator]: Spin request was accepted
-[INFO] [1764887955.646901139] [navigator]: Task Spin got result
-[ERROR] [1764887955.646933555] [navigator]: Goal was achieved
-[WP 7/14] East-Center area | 3:38 elapsed
-[INFO] [1764887955.848832708] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887955.849516708] [navigator]: GoToPose request was accepted
-[INFO] [1764887978.489598594] [navigator]: Task Go to Pose got result
-[ERROR] [1764887978.489901094] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 8/14] Center open area | 4:00 elapsed
-[INFO] [1764887978.490064219] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764887978.491589469] [navigator]: GoToPose request was accepted
-[INFO] [1764888004.652773300] [navigator]: Task Go to Pose got result
-[ERROR] [1764888004.652807967] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 9/14] North-East area | 4:27 elapsed
-[INFO] [1764888004.652877425] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888004.653997884] [navigator]: GoToPose request was accepted
-[INFO] [1764888056.614073088] [navigator]: Task Go to Pose got result
-[ERROR] [1764888056.614132380] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 10/14] West corridor (H2 vicinity) | 5:19 elapsed
-[INFO] [1764888056.614248755] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888056.615224296] [navigator]: GoToPose request was accepted
-[INFO] [1764888099.691077136] [navigator]: Task Go to Pose got result
-[ERROR] [1764888099.692939303] [navigator]: Goal was achieved
-  ✓ Reached successfully
-  → Performing 360° scan...
-[INFO] [1764888099.693013178] [navigator]: Waiting for Spin action server
-[INFO] [1764888099.694337678] [navigator]: In task Spin response callback
-[INFO] [1764888099.694358803] [navigator]: Goal accepted by server, waiting for result
-[INFO] [1764888099.694499761] [navigator]: Spin request was accepted
-[INFO] [1764888101.802962845] [navigator]: Task Spin got result
-[ERROR] [1764888101.803053387] [navigator]: Goal was achieved
-[WP 11/14] ★ H2 ORIGINAL (-12, 15) | 6:04 elapsed
-[INFO] [1764888102.006276304] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888102.008745345] [navigator]: GoToPose request was accepted
-[INFO] [1764888261.639710086] [navigator]: Task Go to Pose got result
-[ERROR] [1764888261.639800294] [navigator]: Goal was achieved
-  ✓ Reached successfully
-  → Performing 360° scan...
-[INFO] [1764888261.639957669] [navigator]: Waiting for Spin action server
-[INFO] [1764888261.642785086] [navigator]: In task Spin response callback
-[INFO] [1764888261.642839586] [navigator]: Goal accepted by server, waiting for result
-[INFO] [1764888261.643308294] [navigator]: Spin request was accepted
-[INFO] [1764888263.744248837] [navigator]: Task Spin got result
-[ERROR] [1764888263.744371170] [navigator]: Goal was achieved
-[WP 12/14] North-Center | 8:46 elapsed
-[INFO] [1764888263.953306378] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888263.963266378] [navigator]: GoToPose request was accepted
-[INFO] [1764888283.432176513] [navigator]: Task Go to Pose got result
-[ERROR] [1764888283.432244554] [navigator]: Goal was aborted
-  ✗ Navigation failed
-[WP 13/14] East edge mid | 9:05 elapsed
-[INFO] [1764888283.432344054] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888283.433039388] [navigator]: GoToPose request was accepted
-[INFO] [1764888392.600575841] [navigator]: Task Go to Pose got result
-[ERROR] [1764888392.600690008] [navigator]: Goal was achieved
-  ✓ Reached successfully
-[WP 14/14] East edge south | 10:55 elapsed
-[INFO] [1764888392.601086091] [navigator]: Waiting for NavigateToGoal action server
-[INFO] [1764888392.602557299] [navigator]: GoToPose request was accepted
-[INFO] [1764888439.319306084] [navigator]: Task Go to Pose got result
-[ERROR] [1764888439.319341709] [navigator]: Goal was achieved
-  ✓ Reached successfully
-
-========================================
-     WAREHOUSE COVERAGE COMPLETE
-========================================
-Waypoints completed: 12/14 (85%)
-Failed attempts: 2
-Total runtime: 11m 41s
-========================================
-
-[INFO] [1764888439.319461793] [tb4_human_detector]: ==========================================
-[INFO] [1764888439.319504793] [tb4_human_detector]:         HUMAN DETECTION REPORT            
-[INFO] [1764888439.319512293] [tb4_human_detector]: ==========================================
-[INFO] [1764888439.319514793] [tb4_human_detector]: H1 original (1.00, -1.00): 456/456 scans (100.0%)
-[INFO] [1764888439.319530959] [tb4_human_detector]: H2 original (-12.00, 15.00): 0/56 scans (0.0%)
-[INFO] [1764888439.319534709] [tb4_human_detector]: [Human 1] STILL at (1.00, -1.00) ✓
-[INFO] [1764888439.319537584] [tb4_human_detector]: [Human 2] MOVED from (-12.00, 15.00)
-[INFO] [1764888439.319540709] [tb4_human_detector]: ------------------------------------------
-[INFO] [1764888439.319544543] [tb4_human_detector]: Analyzing obstacle detections for moved humans...
-[INFO] [1764888439.323732210] [tb4_human_detector]: Found 93 potential human locations
-[INFO] [1764888439.323797168] [tb4_human_detector]: => Human 2 NEW LOCATION: (-10.17, 17.77) [23409 detections]
-[INFO] [1764888439.323808626] [tb4_human_detector]: ==========================================
+    (For Humans who has not moved):
 
 
-(For Human 1 who has moved to (5,3)) (By the way, 5,3 is just an example place I have been putting human 1, it can move anywhere)
+    (For Human 1 who has moved to (5,3)) (By the way, (5,3) is just an example place I have been putting human 1, it can move anywhere):
 
 
-(For Human 1 who has moved to (10,12) )
+    (For Human 1 who has moved to (10,12) ):
 
 
-Human 1 at (-4,-10)
+    Human 1 at (-4,-10):
 
 
-Human 2 at (12,11)
+    Human 2 at (12,11):
