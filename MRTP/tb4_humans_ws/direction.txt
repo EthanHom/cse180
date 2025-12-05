@@ -101,273 +101,260 @@ Where Humans are located when not moved:
 
 Terminal Results:
     (For Humans who has not moved):
-        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-        [INFO] [1764914486.191306167] [tb4_human_detector]: Opportunistic Human Detector Initialized.
-        [INFO] [1764914486.250302334] [navigator]: Created instance of Navigator
-
-        [Main] Waiting for Map...
-        [WARN] [1764914486.250807042] [tf2_buffer]: Detected time source change. Clearing TF buffer.
-        [Main] Map Received.
-        [INFO] [1764914487.462607126] [navigator]: Inside SetInitialPose
-        [INFO] [1764914487.462712459] [navigator]: Waiting for Nav2 to activate...
-        [INFO] [1764914487.462726459] [navigator]: Waiting for amcl
-        [INFO] [1764914487.469078876] [navigator]: amcl active
-        [INFO] [1764914487.471108876] [navigator]: acml is ready
-        [INFO] [1764914487.471133459] [navigator]: Waiting for initial pose
-        [INFO] [1764914487.502886793] [navigator]: initial pose is received
-        [INFO] [1764914487.502919376] [navigator]: Waiting for bt_navigator
-        [INFO] [1764914487.505285418] [navigator]: bt_navigator active
-        [INFO] [1764914487.506082709] [navigator]: bt_navigator is ready
-        [INFO] [1764914487.506110334] [navigator]: Nav2 is ready!
-
-        [Main] Phase 1: Checking original locations...
-        [INFO] [1764914487.506121001] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764914487.507244959] [navigator]: GoToPose request was accepted
-        [INFO] [1764914535.044441093] [navigator]: Task Go to Pose got result
-        [ERROR] [1764914535.044550884] [navigator]: Goal was achieved
-        [INFO] [1764914535.044605759] [navigator]: Waiting for Spin action server
-        [INFO] [1764914535.045798926] [navigator]: In task Spin response callback
-        [INFO] [1764914535.046014551] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764914535.046077301] [navigator]: Spin request was accepted
-        [INFO] [1764914537.270550094] [navigator]: Task Spin got result
-        [ERROR] [1764914537.270597219] [navigator]: Goal was achieved
-        [INFO] [1764914537.270651469] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764914537.271259969] [navigator]: GoToPose request was accepted
-        [INFO] [1764914679.156081465] [navigator]: Task Go to Pose got result
-        [ERROR] [1764914679.156202923] [navigator]: Goal was achieved
-        [INFO] [1764914679.156411048] [navigator]: Waiting for Spin action server
-        [INFO] [1764914679.158380882] [navigator]: In task Spin response callback
-        [INFO] [1764914679.158463298] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764914679.158589465] [navigator]: Spin request was accepted
-        [INFO] [1764914680.978214383] [navigator]: Task Spin got result
-        [ERROR] [1764914680.978276216] [navigator]: Goal was achieved
-        [Main] Status: H1@Start, H2@Start. Found 0 new candidates en route.
-        [Main] SUCCESS: Both humans found at original locations!
-
-        ========================================
-            HUMAN DETECTION REPORT
-        ========================================
-        [Human 1] STILL AT ORIGINAL (1, -1) [DETECTED]
-        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
-        ========================================
-
-        [Main] Mission Completed in 3 min 14 sec.
         
 
     (For Human 1 who has moved to (5,3)) (By the way, (5,3) is just an example place I have been putting human 1, it can move anywhere):
-        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-        [INFO] [1764913762.628612513] [tb4_human_detector]: Opportunistic Human Detector Initialized.
-        [INFO] [1764913762.658635097] [navigator]: Created instance of Navigator
-
-        [Main] Waiting for Map...
-        [WARN] [1764913762.659210347] [tf2_buffer]: Detected time source change. Clearing TF buffer.
-        [Main] Map Received.
-        [INFO] [1764913764.576861166] [navigator]: Inside SetInitialPose
-        [INFO] [1764913764.577042333] [navigator]: Waiting for Nav2 to activate...
-        [INFO] [1764913764.577057041] [navigator]: Waiting for amcl
-        [INFO] [1764913764.670693666] [navigator]: amcl active
-        [INFO] [1764913764.672629291] [navigator]: acml is ready
-        [INFO] [1764913764.672683291] [navigator]: Waiting for initial pose
-        [INFO] [1764913764.672829416] [navigator]: initial pose is received
-        [INFO] [1764913764.672843083] [navigator]: Waiting for bt_navigator
-        [INFO] [1764913764.759867958] [navigator]: bt_navigator active
-        [INFO] [1764913764.761344417] [navigator]: bt_navigator is ready
-        [INFO] [1764913764.761452208] [navigator]: Nav2 is ready!
-
-        [Main] Phase 1: Checking original locations...
-        [INFO] [1764913764.761467458] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764913764.762260542] [navigator]: GoToPose request was accepted
-        [INFO] [1764913812.625279550] [navigator]: Task Go to Pose got result
-        [ERROR] [1764913812.625408592] [navigator]: Goal was achieved
-        [INFO] [1764913812.625519008] [navigator]: Waiting for Spin action server
-        [INFO] [1764913812.627829342] [navigator]: In task Spin response callback
-        [INFO] [1764913812.627867842] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764913812.627973050] [navigator]: Spin request was accepted
-        [INFO] [1764913814.852311843] [navigator]: Task Spin got result
-        [ERROR] [1764913814.852360843] [navigator]: Goal was achieved
-        [INFO] [1764913814.852419259] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764913814.853074676] [navigator]: GoToPose request was accepted[INFO] [1764913959.440648382] [navigator]: Task Go to Pose got result
-        [ERROR] [1764913959.440734465] [navigator]: Goal was achieved
-        [INFO] [1764913959.440829799] [navigator]: Waiting for Spin action server
-        [INFO] [1764913959.444862590] [navigator]: In task Spin response callback
-        [INFO] [1764913959.444953590] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764913959.445033090] [navigator]: Spin request was accepted
-        [INFO] [1764913961.346387049] [navigator]: Task Spin got result
-        [ERROR] [1764913961.346423424] [navigator]: Goal was achieved
-        [Main] Status: H1@Moved, H2@Start. Found 1 new candidates en route.
-        [Main] SUCCESS: Found moved humans en route! Skipping exhaustive search.
-
-        ========================================
-            HUMAN DETECTION REPORT
-        ========================================
-        [Human 1] MOVED from (1, -1)
-                NEW LOCATION: (5.05937, 2.98125)
-        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
-        ========================================
-
-        [Main] Mission Completed in 3 min 18 sec.
-
+       
 
     (For Human 1 who has moved to (10,12) ):
-        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-        [INFO] [1764914852.146838920] [tb4_human_detector]: Opportunistic Human Detector Initialized.
-        [INFO] [1764914852.170119003] [navigator]: Created instance of Navigator
-
-        [Main] Waiting for Map...
-        [WARN] [1764914852.171579378] [tf2_buffer]: Detected time source change. Clearing TF buffer.
-        [Main] Map Received.
-        [INFO] [1764914853.683473671] [navigator]: Inside SetInitialPose
-        [INFO] [1764914853.683561921] [navigator]: Waiting for Nav2 to activate...
-        [INFO] [1764914853.683571421] [navigator]: Waiting for amcl
-        [INFO] [1764914853.686991379] [navigator]: amcl active
-        [INFO] [1764914853.688205462] [navigator]: acml is ready
-        [INFO] [1764914853.688479462] [navigator]: Waiting for initial pose
-        [INFO] [1764914853.742534004] [navigator]: initial pose is received
-        [INFO] [1764914853.742600254] [navigator]: Waiting for bt_navigator
-        [INFO] [1764914853.745464337] [navigator]: bt_navigator active
-        [INFO] [1764914853.745936962] [navigator]: bt_navigator is ready
-        [INFO] [1764914853.745946421] [navigator]: Nav2 is ready!
-
-        [Main] Phase 1: Checking original locations...
-        [INFO] [1764914853.745954129] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764914853.750138629] [navigator]: GoToPose request was accepted
-        [INFO] [1764914901.479277721] [navigator]: Task Go to Pose got result
-        [ERROR] [1764914901.479495138] [navigator]: Goal was achieved
-        [INFO] [1764914901.479684054] [navigator]: Waiting for Spin action server
-        [INFO] [1764914901.481595679] [navigator]: In task Spin response callback
-        [INFO] [1764914901.481626804] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764914901.481744221] [navigator]: Spin request was accepted
-        [INFO] [1764914903.704156347] [navigator]: Task Spin got result
-        [ERROR] [1764914903.704212555] [navigator]: Goal was achieved
-        [INFO] [1764914903.704459847] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764914903.705656514] [navigator]: GoToPose request was accepted
-        [INFO] [1764915047.230265760] [navigator]: Task Go to Pose got result
-        [ERROR] [1764915047.230419177] [navigator]: Goal was achieved
-        [INFO] [1764915047.230532510] [navigator]: Waiting for Spin action server
-        [INFO] [1764915047.236179010] [navigator]: In task Spin response callback
-        [INFO] [1764915047.236214427] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764915047.236373219] [navigator]: Spin request was accepted
-        [INFO] [1764915049.337891428] [navigator]: Task Spin got result
-        [ERROR] [1764915049.337958220] [navigator]: Goal was achieved
-        [Main] Status: H1@Moved, H2@Start. Found 1 new candidates en route.
-        [Main] SUCCESS: Found moved humans en route! Skipping exhaustive search.
-
-        ========================================
-            HUMAN DETECTION REPORT
-        ========================================
-        [Human 1] MOVED from (1, -1)
-                NEW LOCATION: (10.15, 11.9688)
-        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
-        ========================================
-
-        [Main] Mission Completed in 3 min 17 sec.
-
+        
 
     Human 1 at (-4,-10):
         (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-        [INFO] [1764915124.619761838] [tb4_human_detector]: Opportunistic Human Detector Initialized.
-        [INFO] [1764915124.665648713] [navigator]: Created instance of Navigator
+        [INFO] [1764919856.900548167] [tb4_human_detector]: Robust Human Detector Initialized.
+        [INFO] [1764919856.960217792] [navigator]: Created instance of Navigator
 
+        [WARN] [1764919856.960524501] [tf2_buffer]: Detected time source change. Clearing TF buffer.
         [Main] Waiting for Map...
-        [WARN] [1764915124.666338296] [tf2_buffer]: Detected time source change. Clearing TF buffer.
         [Main] Map Received.
-        [INFO] [1764915126.290217214] [navigator]: Inside SetInitialPose
-        [INFO] [1764915126.290324380] [navigator]: Waiting for Nav2 to activate...
-        [INFO] [1764915126.290335880] [navigator]: Waiting for amcl
-        [INFO] [1764915126.296060797] [navigator]: amcl active
-        [INFO] [1764915126.297916755] [navigator]: acml is ready
-        [INFO] [1764915126.298709797] [navigator]: Waiting for initial pose
-        [INFO] [1764915126.373439380] [navigator]: initial pose is received
-        [INFO] [1764915126.373483797] [navigator]: Waiting for bt_navigator
-        [INFO] [1764915126.378692755] [navigator]: bt_navigator active
-        [INFO] [1764915126.379686005] [navigator]: bt_navigator is ready
-        [INFO] [1764915126.379813672] [navigator]: Nav2 is ready!
+        [INFO] [1764919859.386676168] [navigator]: Inside SetInitialPose
+        [INFO] [1764919859.386867043] [navigator]: Waiting for Nav2 to activate...
+        [INFO] [1764919859.386880293] [navigator]: Waiting for amcl
+        [INFO] [1764919859.396270418] [navigator]: amcl active
+        [INFO] [1764919859.398003793] [navigator]: acml is ready
+        [INFO] [1764919859.398026252] [navigator]: Waiting for initial pose
+        [INFO] [1764919859.458473793] [navigator]: initial pose is received
+        [INFO] [1764919859.458518210] [navigator]: Waiting for bt_navigator
+        [INFO] [1764919859.731900585] [navigator]: bt_navigator active
+        [INFO] [1764919859.733476127] [navigator]: bt_navigator is ready
+        [INFO] [1764919859.733509419] [navigator]: Nav2 is ready!
 
         [Main] Phase 1: Checking original locations...
-        [INFO] [1764915126.379876047] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764915126.397023547] [navigator]: GoToPose request was accepted
-        [INFO] [1764915173.736673347] [navigator]: Task Go to Pose got result
-        [ERROR] [1764915173.736711639] [navigator]: Goal was achieved
-        [INFO] [1764915173.736766222] [navigator]: Waiting for Spin action server
-        [INFO] [1764915173.737724930] [navigator]: In task Spin response callback
-        [INFO] [1764915173.737751639] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764915173.737865055] [navigator]: Spin request was accepted
-        [INFO] [1764915175.839486917] [navigator]: Task Spin got result
-        [ERROR] [1764915175.839516292] [navigator]: Goal was achieved
-        [INFO] [1764915175.839573209] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764915175.840412292] [navigator]: GoToPose request was accepted
-        [INFO] [1764915319.275786511] [navigator]: Task Go to Pose got result
-        [ERROR] [1764915319.276053928] [navigator]: Goal was achieved
-        [INFO] [1764915319.276162553] [navigator]: Waiting for Spin action server
-        [INFO] [1764915319.279345345] [navigator]: In task Spin response callback
-        [INFO] [1764915319.279370511] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764915319.279434886] [navigator]: Spin request was accepted
-        [INFO] [1764915321.303880346] [navigator]: Task Spin got result
-        [ERROR] [1764915321.303925346] [navigator]: Goal was achieved
-        [Main] Status: H1@Moved, H2@Start. Found 1 new candidates en route.
-        [Main] SUCCESS: Found moved humans en route! Skipping exhaustive search.
+        [INFO] [1764919859.733539460] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764919859.737952710] [navigator]: GoToPose request was accepted
+        [INFO] [1764919907.150096927] [navigator]: Task Go to Pose got result
+        [ERROR] [1764919907.150131302] [navigator]: Goal was achieved
+        [INFO] [1764919907.150199468] [navigator]: Waiting for Spin action server
+        [INFO] [1764919907.150917552] [navigator]: In task Spin response callback
+        [INFO] [1764919907.150939052] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1764919907.150988510] [navigator]: Spin request was accepted
+        [INFO] [1764919909.252250720] [navigator]: Task Spin got result
+        [ERROR] [1764919909.252288678] [navigator]: Goal was achieved
+        [INFO] [1764919909.252374470] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764919909.253237845] [navigator]: GoToPose request was accepted
+        [INFO] [1764920053.031242967] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920053.031432425] [navigator]: Goal was achieved
+        [INFO] [1764920053.031641508] [navigator]: Waiting for Spin action server
+        [INFO] [1764920053.036203342] [navigator]: In task Spin response callback
+        [INFO] [1764920053.036418383] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1764920053.036534425] [navigator]: Spin request was accepted
+        [INFO] [1764920054.859827592] [navigator]: Task Spin got result
+        [ERROR] [1764920054.859881509] [navigator]: Goal was achieved
+        [Main] Status: H1@Moved, H2@Start
+        [Main] WARNING: Need to find 1 more human(s). Starting Search...
+        [Main] Navigating to WP 1/71...[INFO] [1764920054.860304926] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920054.861713426] [navigator]: GoToPose request was accepted
+        [INFO] [1764920187.027173751] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920187.027247626] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 2/71...[INFO] [1764920187.027387126] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920187.029984084] [navigator]: GoToPose request was accepted
+        [INFO] [1764920201.195153174] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920201.196869924] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 3/71...[INFO] [1764920201.197044466] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920201.199219757] [navigator]: GoToPose request was accepted
+        [INFO] [1764920216.050206542] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920216.050240833] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 4/71...[INFO] [1764920216.050316875] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920216.050792875] [navigator]: GoToPose request was accepted
+        [INFO] [1764920230.914289341] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920230.915256049] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 5/71...[INFO] [1764920230.915732424] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920230.916962007] [navigator]: GoToPose request was accepted
+        [INFO] [1764920245.719237125] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920245.719274542] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 6/71...[INFO] [1764920245.719338917] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920245.721052167] [navigator]: GoToPose request was accepted
+        [INFO] [1764920261.185317382] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920261.185423216] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 7/71...[INFO] [1764920261.185596632] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920261.187033257] [navigator]: GoToPose request was accepted
+        [INFO] [1764920286.893537464] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920286.893571714] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 8/71...[INFO] [1764920286.893732297] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920286.896955464] [navigator]: GoToPose request was accepted
+        [INFO] [1764920303.104458513] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920303.104510930] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 9/71...[INFO] [1764920303.104612388] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920303.105923763] [navigator]: GoToPose request was accepted
+        [INFO] [1764920318.577906048] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920318.577947256] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 10/71...[INFO] [1764920318.578031589] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920318.578676339] [navigator]: GoToPose request was accepted
+        [INFO] [1764920333.753364722] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920333.753409472] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 11/71...[INFO] [1764920333.753480930] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920333.755018138] [navigator]: GoToPose request was accepted
+        [INFO] [1764920348.975880923] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920348.976017298] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 12/71...[INFO] [1764920348.976188881] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920348.977713215] [navigator]: GoToPose request was accepted
+        [INFO] [1764920363.581101472] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920363.581653597] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 13/71...[INFO] [1764920363.581737138] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920363.583215972] [navigator]: GoToPose request was accepted
+        [INFO] [1764920372.884288795] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920372.884329212] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 14/71...[INFO] [1764920372.884403962] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920372.885110128] [navigator]: GoToPose request was accepted
+        [INFO] [1764920382.676457883] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920382.676511341] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 15/71...[INFO] [1764920382.676602758] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920382.677203008] [navigator]: GoToPose request was accepted
+        [INFO] [1764920392.067887137] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920392.068126596] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 17/71...[INFO] [1764920392.068291012] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920392.070120096] [navigator]: GoToPose request was accepted
+        [INFO] [1764920410.719279465] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920410.719312049] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 18/71...[INFO] [1764920410.719393132] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920410.719991882] [navigator]: GoToPose request was accepted
+        [INFO] [1764920420.417209428] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920420.417279428] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 19/71...[INFO] [1764920420.417397720] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920420.418022678] [navigator]: GoToPose request was accepted
+        [INFO] [1764920435.211686838] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920435.211833713] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 20/71...[INFO] [1764920435.211919879] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920435.212874713] [navigator]: GoToPose request was accepted
+        [INFO] [1764920451.799905179] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920451.799948554] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 21/71...[INFO] [1764920451.800054762] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920451.800620637] [navigator]: GoToPose request was accepted
+        [INFO] [1764920470.207696507] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920470.207733090] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 22/71...[INFO] [1764920470.207814173] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920470.208254132] [navigator]: GoToPose request was accepted
+        [INFO] [1764920484.578145055] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920484.578240055] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 23/71...[INFO] [1764920484.578764055] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920484.590959139] [navigator]: GoToPose request was accepted
+        [INFO] [1764920500.001664465] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920500.001872215] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 24/71...[INFO] [1764920500.002153465] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920500.007646715] [navigator]: GoToPose request was accepted
+        [INFO] [1764920527.935725672] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920527.935776339] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 25/71...[INFO] [1764920527.935895672] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920527.938191256] [navigator]: GoToPose request was accepted
+        [INFO] [1764920553.402706587] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920553.402749045] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 26/71...[INFO] [1764920553.402817920] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920553.403545462] [navigator]: GoToPose request was accepted
+        [INFO] [1764920567.966103969] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920567.966255761] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 27/71...[INFO] [1764920567.966473219] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920567.968105844] [navigator]: GoToPose request was accepted
+        [INFO] [1764920582.619848003] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920582.619898212] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 28/71...[INFO] [1764920582.619990920] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920582.621047003] [navigator]: GoToPose request was accepted
+        [INFO] [1764920597.468978469] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920597.469009844] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 29/71...[INFO] [1764920597.469093094] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920597.469609469] [navigator]: GoToPose request was accepted
+        [INFO] [1764920612.050443836] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920612.050487670] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 30/71...[INFO] [1764920612.050557461] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920612.053087961] [navigator]: GoToPose request was accepted
+        [INFO] [1764920646.503788797] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920646.503854047] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 31/71...[INFO] [1764920646.503939213] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920646.504863672] [navigator]: GoToPose request was accepted
+        [INFO] [1764920661.072518970] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920661.072558179] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 32/71...[INFO] [1764920661.072629512] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920661.073161429] [navigator]: GoToPose request was accepted
+        [INFO] [1764920677.130461547] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920677.130505589] [navigator]: Goal was achieved
+        DONE
+        [Main] Navigating to WP 33/71...[INFO] [1764920677.130573964] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920677.131041255] [navigator]: GoToPose request was accepted
+        [INFO] [1764920677.231737797] [navigator]: Canceling current task Go to Pose
+        [INFO] [1764920677.269971505] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920677.269998505] [navigator]: Goal was canceled
+        INTERRUPTED/SKIPPED
+
+        [Main] INTERRUPT: Investigating candidate at (-4, -10.1)...
+        [INFO] [1764920677.270199755] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1764920677.271812005] [navigator]: GoToPose request was accepted
+        [INFO] [1764920734.805191379] [navigator]: Task Go to Pose got result
+        [ERROR] [1764920734.805314338] [navigator]: Goal was achieved
+        [INFO] [1764920734.805466379] [navigator]: Waiting for Spin action server
+        [INFO] [1764920734.811612713] [navigator]: In task Spin response callback
+        [INFO] [1764920734.811783421] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1764920734.811913713] [navigator]: Spin request was accepted
+        [INFO] [1764920737.036086797] [navigator]: Task Spin got result
+        [ERROR] [1764920737.036130255] [navigator]: Goal was achieved
+        [Main] CONFIRMED HUMAN FOUND!
 
         ========================================
             HUMAN DETECTION REPORT
         ========================================
         [Human 1] MOVED from (1, -1)
-                NEW LOCATION: (-12.8719, 11.9656)
+                NEW LOCATION: (-4, -10.1)
         [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
         ========================================
 
-        [Main] Mission Completed in 3 min 16 sec.
-
+        [Main] Mission Completed in 14 min 40 sec.
+        
 
     Human 2 at (12,11):
-        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
-        [INFO] [1764915476.216150584] [tb4_human_detector]: Opportunistic Human Detector Initialized.
-        [INFO] [1764915476.278745625] [navigator]: Created instance of Navigator
 
-        [Main] Waiting for Map...
-        [WARN] [1764915476.279285375] [tf2_buffer]: Detected time source change. Clearing TF buffer.
-        [Main] Map Received.
-        [INFO] [1764915479.414706710] [navigator]: Inside SetInitialPose
-        [INFO] [1764915479.414867794] [navigator]: Waiting for Nav2 to activate...
-        [INFO] [1764915479.414880669] [navigator]: Waiting for amcl
-        [INFO] [1764915479.424573669] [navigator]: amcl active
-        [INFO] [1764915479.429350460] [navigator]: acml is ready
-        [INFO] [1764915479.429387127] [navigator]: Waiting for initial pose
-        [INFO] [1764915479.533913335] [navigator]: initial pose is received
-        [INFO] [1764915479.534309877] [navigator]: Waiting for bt_navigator
-        [INFO] [1764915479.542094169] [navigator]: bt_navigator active
-        [INFO] [1764915479.543726669] [navigator]: bt_navigator is ready
-        [INFO] [1764915479.543828044] [navigator]: Nav2 is ready!
 
-        [Main] Phase 1: Checking original locations...
-        [INFO] [1764915479.543858002] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764915479.546478002] [navigator]: GoToPose request was accepted
-        [INFO] [1764915528.529460511] [navigator]: Task Go to Pose got result
-        [ERROR] [1764915528.529578011] [navigator]: Goal was achieved
-        [INFO] [1764915528.529679428] [navigator]: Waiting for Spin action server
-        [INFO] [1764915528.531024094] [navigator]: In task Spin response callback
-        [INFO] [1764915528.531043219] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764915528.531083511] [navigator]: Spin request was accepted
-        [INFO] [1764915530.757739179] [navigator]: Task Spin got result
-        [ERROR] [1764915530.757776054] [navigator]: Goal was achieved
-        [INFO] [1764915530.757825845] [navigator]: Waiting for NavigateToGoal action server
-        [INFO] [1764915530.758789304] [navigator]: GoToPose request was accepted
-        [INFO] [1764915676.858188927] [navigator]: Task Go to Pose got result
-        [ERROR] [1764915676.858309844] [navigator]: Goal was achieved
-        [INFO] [1764915676.858432052] [navigator]: Waiting for Spin action server
-        [INFO] [1764915676.862220969] [navigator]: In task Spin response callback
-        [INFO] [1764915676.862304135] [navigator]: Goal accepted by server, waiting for result
-        [INFO] [1764915676.864666302] [navigator]: Spin request was accepted
-        [INFO] [1764915678.885866636] [navigator]: Task Spin got result
-        [ERROR] [1764915678.885959678] [navigator]: Goal was achieved
-        [Main] Status: H1@Start, H2@Moved. Found 1 new candidates en route.
-        [Main] SUCCESS: Found moved humans en route! Skipping exhaustive search.
+    Human 1 at (-7, 12): 
 
-        ========================================
-            HUMAN DETECTION REPORT
-        ========================================
-        [Human 1] STILL AT ORIGINAL (1, -1) [DETECTED]
-        [Human 2] MOVED from (-12, 15)
-                NEW LOCATION: (11.975, 10.8813)
-        ========================================
+    Human 2 at (-12, 2): 
 
-        [Main] Mission Completed in 3 min 22 sec.
+    Human 1 at (-12, -23): 
+
+    Human 2 at (-5, -11): 
+
+    Human 1 at (12,0): 
+
+    Human 2 at (12,-12): 
+
+    Human 1 at (13,-18): 
+
+    Human 2 at (14,-24): 
+
+    Human 1 at (-13,9): 
