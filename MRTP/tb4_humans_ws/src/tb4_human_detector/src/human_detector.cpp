@@ -22,13 +22,13 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v12 (Corner & Edge Sensitivity Fix)
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v13 (Precision Bounds)
 // 
 // Updates:
-// 1. Wall Buffer reduced to 10 cells (30cm) to detect humans standing near walls/corners.
-// 2. Bounds expanded to +/- 14.85 and +/- 24.85 to catch edge cases like (14, -24).
-// 3. Laser Range increased to 5.5m to scan deeper into aisles.
-// 4. Preserves 'resetCounters' logic to prevent false positives at original locations.
+// 1. Bounds Tuned: X [+/- 14.5], Y [+/- 24.5]. 
+//    - Rejects wall ghost at 24.8.
+//    - Accepts humans at 14.0/24.0.
+// 2. Logic remains: Check Original -> Opportunistic Search -> Verify -> Report.
 // =============================================================================================
 
 #include <memory>
@@ -91,12 +91,11 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Human Detector Ready.");
+        RCLCPP_INFO(this->get_logger(), "Precision Human Detector Ready.");
     }
 
     bool hasMap() const { return have_map_.load(); }
     
-    // Resets hit counters to ensure clean detection at specific spots
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         scans_near_h1_ = 0; h1_hits_ = 0;
@@ -118,8 +117,7 @@ public:
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // Lowered Threshold: 25 hits (catches partially occluded or distant humans)
-            if (count < 25) continue; 
+            if (count < 30) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
@@ -127,9 +125,10 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // [FIX] EXPANDED BOUNDS to catch (14, -24)
-            // Walls are at approx 15.0/25.0, so 14.85 is safe.
-            if (wx < -14.85 || wx > 14.85 || wy < -24.85 || wy > 24.85) continue;
+            // [FIX] PRECISION BOUNDS
+            // Warehouse is +/- 15 and +/- 25.
+            // 14.5 / 24.5 is safe for humans but excludes walls.
+            if (wx < -14.5 || wx > 14.5 || wy < -24.5 || wy > 24.5) continue;
 
             candidates.push_back({wx, wy, count});
         }
@@ -168,7 +167,6 @@ public:
         std::lock_guard<std::mutex> lock(map_mutex_); 
         if (!have_map_) return goals;
 
-        // 3.5m step for denser coverage near edges
         double step_size = 3.5; 
         
         auto is_free_unsafe = [&](double wx, double wy) {
@@ -310,8 +308,6 @@ private:
 
         for (size_t i = 0; i < scan->ranges.size(); ++i) {
             float r = scan->ranges[i];
-            
-            // [FIX] Increased range to 5.5m to catch far corners while keeping speed
             if (!std::isfinite(r) || r < scan->range_min || r > 5.5) continue; 
 
             float angle = scan->angle_min + i * scan->angle_increment;
@@ -333,8 +329,6 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            // [FIX] Reduced Wall Buffer: 10 cells (30cm)
-            // This allows detecting a human standing 40cm from a wall.
             int check_rad = 10; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
@@ -379,9 +373,7 @@ int main(int argc, char **argv) {
     navigator.SetInitialPose(init_pose);
     navigator.WaitUntilNav2Active();
 
-    // ---------------------------------------------------------
     // PHASE 1: CHECK ORIGINAL SPOTS
-    // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
     detector->resetCounters();
@@ -415,9 +407,7 @@ int main(int argc, char **argv) {
     std::cout << "[Main] Status: H1@" << (h1_found ? "Start" : "Moved") 
               << ", H2@" << (h2_found ? "Start" : "Moved") << std::endl;
 
-    // ---------------------------------------------------------
     // PHASE 2: VERIFIED SEARCH
-    // ---------------------------------------------------------
     std::vector<Candidate> verified_locations;
 
     if (missing_count == 0) {
