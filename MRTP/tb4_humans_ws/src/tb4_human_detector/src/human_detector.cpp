@@ -22,12 +22,13 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v11 (Final Logic Fix)
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v12 (Corner & Edge Sensitivity Fix)
 // 
 // Updates:
-// 1. Fixed Reporting Logic: reportFindings now accepts status booleans from main().
-//    (Prevents "Main says Found / Report says Moved" contradiction).
-// 2. Tightened Hit Radius: Reduced from 0.6m to 0.5m to avoid detecting nearby shelves.
+// 1. Wall Buffer reduced to 10 cells (30cm) to detect humans standing near walls/corners.
+// 2. Bounds expanded to +/- 14.85 and +/- 24.85 to catch edge cases like (14, -24).
+// 3. Laser Range increased to 5.5m to scan deeper into aisles.
+// 4. Preserves 'resetCounters' logic to prevent false positives at original locations.
 // =============================================================================================
 
 #include <memory>
@@ -95,7 +96,7 @@ public:
 
     bool hasMap() const { return have_map_.load(); }
     
-    // Call this before checking a specific location to clear old data
+    // Resets hit counters to ensure clean detection at specific spots
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         scans_near_h1_ = 0; h1_hits_ = 0;
@@ -117,7 +118,8 @@ public:
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            if (count < 40) continue; 
+            // Lowered Threshold: 25 hits (catches partially occluded or distant humans)
+            if (count < 25) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
@@ -125,7 +127,9 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            if (wx < -14.6 || wx > 14.6 || wy < -24.6 || wy > 24.6) continue;
+            // [FIX] EXPANDED BOUNDS to catch (14, -24)
+            // Walls are at approx 15.0/25.0, so 14.85 is safe.
+            if (wx < -14.85 || wx > 14.85 || wy < -24.85 || wy > 24.85) continue;
 
             candidates.push_back({wx, wy, count});
         }
@@ -164,6 +168,7 @@ public:
         std::lock_guard<std::mutex> lock(map_mutex_); 
         if (!have_map_) return goals;
 
+        // 3.5m step for denser coverage near edges
         double step_size = 3.5; 
         
         auto is_free_unsafe = [&](double wx, double wy) {
@@ -207,7 +212,6 @@ public:
         return sorted_goals;
     }
 
-    // [FIX] Accept statuses as arguments to prevent logic errors with reset counters
     void reportFindings(bool h1_found, bool h2_found, const std::vector<Candidate>& verified_locs) {
         std::cout << "\n========================================" << std::endl;
         std::cout << "       HUMAN DETECTION REPORT" << std::endl;
@@ -306,7 +310,9 @@ private:
 
         for (size_t i = 0; i < scan->ranges.size(); ++i) {
             float r = scan->ranges[i];
-            if (!std::isfinite(r) || r < scan->range_min || r > 4.5) continue; 
+            
+            // [FIX] Increased range to 5.5m to catch far corners while keeping speed
+            if (!std::isfinite(r) || r < scan->range_min || r > 5.5) continue; 
 
             float angle = scan->angle_min + i * scan->angle_increment;
             geometry_msgs::msg::PointStamped p_laser, p_map;
@@ -319,7 +325,6 @@ private:
             double wx = p_map.point.x;
             double wy = p_map.point.y;
 
-            // [FIX] Tightened detection radius to 0.5m (was 0.6m) to ignore nearby shelves
             if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.5) h1_hit_this_scan = true;
             if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.5) h2_hit_this_scan = true;
 
@@ -328,7 +333,9 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            int check_rad = 16; 
+            // [FIX] Reduced Wall Buffer: 10 cells (30cm)
+            // This allows detecting a human standing 40cm from a wall.
+            int check_rad = 10; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
                     int idx = (gy + dy) * map_.info.width + (gx + dx);
@@ -377,10 +384,8 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
-    // Clear data before first check
     detector->resetCounters();
     
-    // Check H1
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h1_goal->position.x = detector->H1_X + 1.0; 
     h1_goal->position.y = detector->H1_Y; 
@@ -392,10 +397,8 @@ int main(int argc, char **argv) {
     
     bool h1_found = detector->isHuman1AtStart();
     
-    // Clear data before second check
     detector->resetCounters();
 
-    // Check H2
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h2_goal->position.x = detector->H2_X + 1.0; 
     h2_goal->position.y = detector->H2_Y; 
@@ -498,7 +501,6 @@ int main(int argc, char **argv) {
     int minutes = total_seconds / 60;
     int seconds = total_seconds % 60;
 
-    // [FIX] Pass correct status to reporting function
     detector->reportFindings(h1_found, h2_found, verified_locations);
     std::cout << "[Main] Mission Completed in " << minutes << " min " << seconds << " sec." << std::endl;
 
