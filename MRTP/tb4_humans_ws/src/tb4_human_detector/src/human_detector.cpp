@@ -507,11 +507,13 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v14 (Reporting Fix)
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v15 (Precision Bounds Fix)
 // 
-// Based on: User's provided text file (v11 logic).
-// Fix: reportFindings() now accepts h1_found/h2_found as arguments. 
-//      This prevents the report from contradicting main() due to reset counters.
+// Updates:
+// 1. Bounds Tightened: X [+/- 14.2], Y [+/- 24.2].
+//    - Keeps human at (14, -24).
+//    - Rejects wall ghost at (..., 24.6).
+// 2. Wall Buffer: Increased to 18 cells to handle drift near walls better.
 // =============================================================================================
 
 #include <memory>
@@ -579,7 +581,6 @@ public:
 
     bool hasMap() const { return have_map_.load(); }
     
-    // Call this before checking a specific location to clear old data
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         scans_near_h1_ = 0; h1_hits_ = 0;
@@ -601,7 +602,6 @@ public:
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // Threshold: 40 hits
             if (count < 40) continue; 
             
             double wx = coord.first / 10.0; 
@@ -610,8 +610,9 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // Bounds Check (v11 logic)
-            if (wx < -14.6 || wx > 14.6 || wy < -24.6 || wy > 24.6) continue;
+            // [FIX] Tightened bounds to +/- 14.2 and +/- 24.2
+            // Keeps (14, -24) but rejects (..., 24.6)
+            if (wx < -14.2 || wx > 14.2 || wy < -24.2 || wy > 24.2) continue;
 
             candidates.push_back({wx, wy, count});
         }
@@ -693,7 +694,6 @@ public:
         return sorted_goals;
     }
 
-    // [FIX] Accept boolean statuses from main() to ensure accurate reporting
     void reportFindings(bool h1_found, bool h2_found, const std::vector<Candidate>& verified_locs) {
         std::cout << "\n========================================" << std::endl;
         std::cout << "       HUMAN DETECTION REPORT" << std::endl;
@@ -813,7 +813,8 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            int check_rad = 16; 
+            // [FIX] Increased wall buffer to 18 cells (~54cm) to handle drift better
+            int check_rad = 18; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
                     int idx = (gy + dy) * map_.info.width + (gx + dx);
