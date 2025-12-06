@@ -22,17 +22,9 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v10 (High Fidelity)
-// 
-// Compliant with:
-// - MRTP Ch 4 (TF2 Transformations)
-// - MRTP Ch 6 (Nav2 Planning & Heuristics)
-// - MRTP Ch 7 & 9 (Occupancy Grid & LaserScan Fusion)
-// 
-// Fixes:
-// 1. "Still at Original" False Positives -> Fixed by resetting counters & higher threshold.
-// 2. "Ghost Walls" -> Fixed by balanced wall buffering (12 cells).
-// 3. "Not Found" -> Fixed by allowing map bounds up to +/- 14.8m.
+// MRTP FINAL PROJECT: FINAL ROBUST DETECTOR
+// Base: Your "Code that worked" (v9 logic)
+// Fix: Added counter resets to prevent "Human Still at Start" false positives.
 // =============================================================================================
 
 #include <memory>
@@ -61,14 +53,13 @@ ros2 run tb4_human_detector human_detector_node
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "navigation/navigation.hpp" 
 
-// ---------------------------------------------------------
-// DATA STRUCTURES
-// ---------------------------------------------------------
+// Internal structure for raw laser clusters
 struct DetectionCluster {
     double x, y;
     int count;
 };
 
+// Public structure for verified candidates
 struct Candidate {
     double x = 0.0;
     double y = 0.0;
@@ -81,18 +72,15 @@ public:
           tf_buffer_(this->get_clock()),
           tf_listener_(tf_buffer_)
     {
-        // [MRTP 5.4.3] Simulation time is mandatory for TF sync
         if (!this->has_parameter("use_sim_time")) {
             this->declare_parameter("use_sim_time", true);
         }
         this->set_parameter(rclcpp::Parameter("use_sim_time", true));
 
-        // [MRTP 9.5]
         map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/map", rclcpp::QoS(1).transient_local().reliable(),
             std::bind(&HumanDetector::mapCallback, this, std::placeholders::_1));
 
-        // [MRTP 7.4.1]
         scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan", rclcpp::SensorDataQoS(),
             std::bind(&HumanDetector::scanCallback, this, std::placeholders::_1));
@@ -101,52 +89,53 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "High-Fidelity Human Detector Initialized.");
+        RCLCPP_INFO(this->get_logger(), "Human Detector Ready.");
     }
 
     bool hasMap() const { return have_map_.load(); }
     
-    // Call this RIGHT BEFORE checking the specific location to clear old data
+    // [FIX] New function to clear data before checking a specific location
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
-        scans_near_h1_ = 0; h1_hits_ = 0;
-        scans_near_h2_ = 0; h2_hits_ = 0;
+        scans_near_h1_ = 0; 
+        h1_hits_ = 0;
+        scans_near_h2_ = 0; 
+        h2_hits_ = 0;
     }
 
     bool isHuman1AtStart() const { 
-        // [FIX] Increased threshold to 25% hit rate to rule out noise
-        if (scans_near_h1_ < 10) return false;
-        return (((double)h1_hits_ / scans_near_h1_) > 0.25); 
+        // Increased threshold to 20% to be absolutely sure
+        if (scans_near_h1_ < 5) return false; // Not enough data yet
+        return (((double)h1_hits_ / scans_near_h1_) > 0.20); 
     }
     
     bool isHuman2AtStart() const { 
-        if (scans_near_h2_ < 10) return false;
-        return (((double)h2_hits_ / scans_near_h2_) > 0.25); 
+        if (scans_near_h2_ < 5) return false;
+        return (((double)h2_hits_ / scans_near_h2_) > 0.20); 
     }
 
-    // [MRTP 6 & 9] Heuristic Candidate Detection
+    // Returns the best candidate location found so far
     Candidate getBestNewCandidate() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // Threshold: Need 40 hits to confirm it's not sensor noise
+            // Threshold: 40 hits (Solid Object)
             if (count < 40) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
 
-            // Ignore original spots (handled separately)
+            // Ignore start locations
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // [FIX] Bounds: +/- 14.8 to catch corners but ignore outside void
-            if (wx < -14.8 || wx > 14.8 || wy < -24.8 || wy > 24.8) continue;
+            // Bounds Check (Warehouse Dimensions)
+            if (wx < -14.6 || wx > 14.6 || wy < -24.6 || wy > 24.6) continue;
 
             candidates.push_back({wx, wy, count});
         }
 
-        // Sort by confidence (hit count)
         std::sort(candidates.begin(), candidates.end(), 
             [](const DetectionCluster &a, const DetectionCluster &b) { return a.count > b.count; });
 
@@ -154,8 +143,7 @@ public:
         return {candidates[0].x, candidates[0].y};
     }
     
-    // Clears specific area (used before verification spin)
-    void clearCandidateArea(double x, double y) {
+    void clearCandidate(double x, double y) {
         std::lock_guard<std::mutex> lock(data_mutex_);
         for (auto it = dynamic_obstacles_.begin(); it != dynamic_obstacles_.end();) {
             double wx = it->first.first / 10.0;
@@ -168,13 +156,20 @@ public:
         }
     }
 
-    // [MRTP 6] Map-Based Path Planning
+    int8_t getMapValue(double x, double y) {
+        std::lock_guard<std::mutex> lock(map_mutex_);
+        if (!have_map_) return -1;
+        int grid_x = static_cast<int>((x - map_.info.origin.position.x) / map_.info.resolution);
+        int grid_y = static_cast<int>((y - map_.info.origin.position.y) / map_.info.resolution);
+        if (grid_x < 0 || grid_x >= (int)map_.info.width || grid_y < 0 || grid_y >= (int)map_.info.height) return -1; 
+        return map_.data[grid_y * map_.info.width + grid_x];
+    }
+
     std::vector<geometry_msgs::msg::PoseStamped> generateCoveragePath() {
         std::vector<geometry_msgs::msg::PoseStamped> goals;
         std::lock_guard<std::mutex> lock(map_mutex_); 
         if (!have_map_) return goals;
 
-        // 3.5m step allows looking deep into corners with 6.0m laser range
         double step_size = 3.5; 
         
         auto is_free_unsafe = [&](double wx, double wy) {
@@ -197,7 +192,6 @@ public:
             }
         }
 
-        // Sort Nearest Neighbor
         if (goals.empty()) return goals;
         double current_x = current_pose_.position.x;
         double current_y = current_pose_.position.y;
@@ -294,16 +288,14 @@ private:
 
         geometry_msgs::msg::TransformStamped tf;
         try {
-            // [MRTP 4.13] TF Tree lookup
             tf = tf_buffer_.lookupTransform("map", scan->header.frame_id, tf2::TimePointZero);
         } catch (const tf2::TransformException &ex) { return; }
 
         double rx = tf.transform.translation.x;
         double ry = tf.transform.translation.y;
 
-        // Proximity checks (Robot must be close for valid check)
-        bool near_h1 = std::hypot(rx - H1_X, ry - H1_Y) < 3.0;
-        bool near_h2 = std::hypot(rx - H2_X, ry - H2_Y) < 3.0;
+        bool near_h1 = std::hypot(rx - H1_X, ry - H1_Y) < 3.5;
+        bool near_h2 = std::hypot(rx - H2_X, ry - H2_Y) < 3.5;
 
         if (near_h1) scans_near_h1_++;
         if (near_h2) scans_near_h2_++;
@@ -322,7 +314,7 @@ private:
 
         for (size_t i = 0; i < scan->ranges.size(); ++i) {
             float r = scan->ranges[i];
-            if (!std::isfinite(r) || r < scan->range_min || r > 5.0) continue; 
+            if (!std::isfinite(r) || r < scan->range_min || r > 4.5) continue; 
 
             float angle = scan->angle_min + i * scan->angle_increment;
             geometry_msgs::msg::PointStamped p_laser, p_map;
@@ -331,25 +323,20 @@ private:
             p_laser.point.y = r * std::sin(angle);
             p_laser.point.z = 0.0;
 
-            // [MRTP 4] Coordinate Transform
             tf2::doTransform(p_laser, p_map, tf);
             double wx = p_map.point.x;
             double wy = p_map.point.y;
 
-            // Check direct hits on original spots (0.6m radius = approx human width)
             if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.6) h1_hit_this_scan = true;
             if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.6) h2_hit_this_scan = true;
 
-            // [MRTP 9] Map vs Sensor Check
             int map_val = get_map_val_unsafe(wx, wy);
             bool wall_nearby = false;
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            // [FIX] BALANCED WALL BUFFER
-            // 12 cells * 0.03m = 36cm. 
-            // Handles drift but allows detecting humans standing near shelves.
-            int check_rad = 12; 
+            // 16 cells = ~48cm buffer. Proven to stop wall ghosts.
+            int check_rad = 16; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
                     int idx = (gy + dy) * map_.info.width + (gx + dx);
@@ -362,7 +349,7 @@ private:
                 }
             }
 
-            if (map_val == 0 && !wall_nearby && r < 4.5) {
+            if (map_val == 0 && !wall_nearby && r < 4.0) {
                 std::lock_guard<std::mutex> data_lock(data_mutex_);
                 int key_x = static_cast<int>(std::round(wx * 10));
                 int key_y = static_cast<int>(std::round(wy * 10));
@@ -394,35 +381,38 @@ int main(int argc, char **argv) {
     navigator.WaitUntilNav2Active();
 
     // ---------------------------------------------------------
-    // PHASE 1: CHECK ORIGINAL SPOTS (Optimized)
+    // PHASE 1: CHECK ORIGINAL SPOTS
     // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
-    // [FIX] Reset counters before measurement to ensure clean data
+    // [FIX] Clear any drive-by noise before checking H1
     detector->resetCounters();
-
-    // Check H1
+    
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
-    // [FIX] Drive closer (1.0m) for accurate laser reading
-    h1_goal->position.x = detector->H1_X + 1.0; 
+    h1_goal->position.x = detector->H1_X + 1.5; 
     h1_goal->position.y = detector->H1_Y; 
     h1_goal->orientation.w = 1.0;
     navigator.GoToPose(h1_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     navigator.Spin(); 
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    
+    // Capture H1 status before resetting for H2
+    bool h1_found = detector->isHuman1AtStart();
+    
+    // [FIX] Clear counters so H2 check is fresh
+    detector->resetCounters();
 
-    // Check H2
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
-    h2_goal->position.x = detector->H2_X + 1.0; 
+    h2_goal->position.x = detector->H2_X + 1.5; 
     h2_goal->position.y = detector->H2_Y; 
     h2_goal->orientation.w = 1.0;
     navigator.GoToPose(h2_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     navigator.Spin();
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
-
-    bool h1_found = detector->isHuman1AtStart();
+    
+    // Capture H2 status
     bool h2_found = detector->isHuman2AtStart();
     int missing_count = (h1_found ? 0 : 1) + (h2_found ? 0 : 1);
 
@@ -465,22 +455,17 @@ int main(int argc, char **argv) {
 
                     navigator.GoToPose(cand_goal);
                     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
-                    
-                    // [FIX] Clear this candidate's old data so we verify based on FRESH scan
-                    detector->clearCandidateArea(cand.x, cand.y);
-                    
                     navigator.Spin(); 
                     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
 
-                    // Now check if it re-appeared (confirmed)
                     Candidate confirmed = detector->getBestNewCandidate();
                     
-                    if (confirmed.x != 0.0 && std::hypot(confirmed.x - cand.x, confirmed.y - cand.y) < 1.5) {
+                    if (confirmed.x != 0.0 && std::hypot(confirmed.x - cand.x, confirmed.y - cand.y) < 1.0) {
                         std::cout << "[Main] CONFIRMED HUMAN FOUND!" << std::endl;
                         verified_locations.push_back(cand);
                     } else {
                         std::cout << "[Main] False positive (Ghost/Wall). Clearing and resuming..." << std::endl;
-                        detector->clearCandidateArea(cand.x, cand.y);
+                        detector->clearCandidate(cand.x, cand.y);
                     }
                     continue; 
                 }
