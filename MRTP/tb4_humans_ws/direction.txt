@@ -100,12 +100,13 @@ Where Humans are located when not moved:
 
 Terminal Results For my test cases:
     Human 1 and 2 not moved:
-    
+
     Human 1 at (5,3):
 
     Human 1 at (10,12):
 
     Human 1 at (-4,-10):
+        pc (linux): 
 
     Human 2 at (12,11):
 
@@ -115,15 +116,15 @@ Terminal Results For my test cases:
         pc (linux):
 
     Human 1 at (-12, -23):
-        mac: 
 
     Human 2 at (12,0):
 
     Human 2 at (-12,0):
-
+    
     Human 1 at (12,-12): 
 
     Human 2 at (13,-18):
+        mac:
 
     Human 1 at (14,-24):
 

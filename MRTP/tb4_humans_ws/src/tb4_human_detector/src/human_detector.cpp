@@ -22,9 +22,12 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: FINAL ROBUST DETECTOR
-// Base: Your "Code that worked" (v9 logic)
-// Fix: Added counter resets to prevent "Human Still at Start" false positives.
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v11 (Final Logic Fix)
+// 
+// Updates:
+// 1. Fixed Reporting Logic: reportFindings now accepts status booleans from main().
+//    (Prevents "Main says Found / Report says Moved" contradiction).
+// 2. Tightened Hit Radius: Reduced from 0.6m to 0.5m to avoid detecting nearby shelves.
 // =============================================================================================
 
 #include <memory>
@@ -53,13 +56,11 @@ ros2 run tb4_human_detector human_detector_node
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "navigation/navigation.hpp" 
 
-// Internal structure for raw laser clusters
 struct DetectionCluster {
     double x, y;
     int count;
 };
 
-// Public structure for verified candidates
 struct Candidate {
     double x = 0.0;
     double y = 0.0;
@@ -94,18 +95,15 @@ public:
 
     bool hasMap() const { return have_map_.load(); }
     
-    // [FIX] New function to clear data before checking a specific location
+    // Call this before checking a specific location to clear old data
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
-        scans_near_h1_ = 0; 
-        h1_hits_ = 0;
-        scans_near_h2_ = 0; 
-        h2_hits_ = 0;
+        scans_near_h1_ = 0; h1_hits_ = 0;
+        scans_near_h2_ = 0; h2_hits_ = 0;
     }
 
     bool isHuman1AtStart() const { 
-        // Increased threshold to 20% to be absolutely sure
-        if (scans_near_h1_ < 5) return false; // Not enough data yet
+        if (scans_near_h1_ < 5) return false;
         return (((double)h1_hits_ / scans_near_h1_) > 0.20); 
     }
     
@@ -114,23 +112,19 @@ public:
         return (((double)h2_hits_ / scans_near_h2_) > 0.20); 
     }
 
-    // Returns the best candidate location found so far
     Candidate getBestNewCandidate() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // Threshold: 40 hits (Solid Object)
             if (count < 40) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
 
-            // Ignore start locations
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // Bounds Check (Warehouse Dimensions)
             if (wx < -14.6 || wx > 14.6 || wy < -24.6 || wy > 24.6) continue;
 
             candidates.push_back({wx, wy, count});
@@ -213,10 +207,8 @@ public:
         return sorted_goals;
     }
 
-    void reportFindings(const std::vector<Candidate>& verified_locs) {
-        bool h1_found = isHuman1AtStart();
-        bool h2_found = isHuman2AtStart();
-
+    // [FIX] Accept statuses as arguments to prevent logic errors with reset counters
+    void reportFindings(bool h1_found, bool h2_found, const std::vector<Candidate>& verified_locs) {
         std::cout << "\n========================================" << std::endl;
         std::cout << "       HUMAN DETECTION REPORT" << std::endl;
         std::cout << "========================================" << std::endl;
@@ -327,15 +319,15 @@ private:
             double wx = p_map.point.x;
             double wy = p_map.point.y;
 
-            if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.6) h1_hit_this_scan = true;
-            if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.6) h2_hit_this_scan = true;
+            // [FIX] Tightened detection radius to 0.5m (was 0.6m) to ignore nearby shelves
+            if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.5) h1_hit_this_scan = true;
+            if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.5) h2_hit_this_scan = true;
 
             int map_val = get_map_val_unsafe(wx, wy);
             bool wall_nearby = false;
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            // 16 cells = ~48cm buffer. Proven to stop wall ghosts.
             int check_rad = 16; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
@@ -385,11 +377,12 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
-    // [FIX] Clear any drive-by noise before checking H1
+    // Clear data before first check
     detector->resetCounters();
     
+    // Check H1
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
-    h1_goal->position.x = detector->H1_X + 1.5; 
+    h1_goal->position.x = detector->H1_X + 1.0; 
     h1_goal->position.y = detector->H1_Y; 
     h1_goal->orientation.w = 1.0;
     navigator.GoToPose(h1_goal);
@@ -397,14 +390,14 @@ int main(int argc, char **argv) {
     navigator.Spin(); 
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
-    // Capture H1 status before resetting for H2
     bool h1_found = detector->isHuman1AtStart();
     
-    // [FIX] Clear counters so H2 check is fresh
+    // Clear data before second check
     detector->resetCounters();
 
+    // Check H2
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
-    h2_goal->position.x = detector->H2_X + 1.5; 
+    h2_goal->position.x = detector->H2_X + 1.0; 
     h2_goal->position.y = detector->H2_Y; 
     h2_goal->orientation.w = 1.0;
     navigator.GoToPose(h2_goal);
@@ -412,8 +405,8 @@ int main(int argc, char **argv) {
     navigator.Spin();
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
-    // Capture H2 status
     bool h2_found = detector->isHuman2AtStart();
+    
     int missing_count = (h1_found ? 0 : 1) + (h2_found ? 0 : 1);
 
     std::cout << "[Main] Status: H1@" << (h1_found ? "Start" : "Moved") 
@@ -505,7 +498,8 @@ int main(int argc, char **argv) {
     int minutes = total_seconds / 60;
     int seconds = total_seconds % 60;
 
-    detector->reportFindings(verified_locations);
+    // [FIX] Pass correct status to reporting function
+    detector->reportFindings(h1_found, h2_found, verified_locations);
     std::cout << "[Main] Mission Completed in " << minutes << " min " << seconds << " sec." << std::endl;
 
     rclcpp::shutdown();
