@@ -21,6 +21,16 @@ ros2 run tb4_human_detector human_detector_node
 */
 
 
+// =============================================================================================
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v10 (State Reset Fix)
+// 
+// Updates:
+// 1. Added 'resetDetectionState()' to clear old sensor data before checking a human.
+//    (Fixes the "Stale Data" false positives where robot thinks moved humans are still there).
+// 2. Tightened Hit Radius to 0.3m (was 0.6m) to avoid detecting walls behind the human.
+// 3. Increased Presence Threshold to 30% (was 10%) to filter sensor noise.
+// =============================================================================================
+
 #include <memory>
 #include <vector>
 #include <cmath>
@@ -53,7 +63,7 @@ struct DetectionCluster {
     int count;
 };
 
-// Public structure for verified candidates (Fixes std::pair warning)
+// Public structure for verified candidates
 struct Candidate {
     double x = 0.0;
     double y = 0.0;
@@ -83,17 +93,30 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Human Detector Ready.");
+        RCLCPP_INFO(this->get_logger(), "Precision Human Detector Initialized.");
     }
 
     bool hasMap() const { return have_map_.load(); }
     
+    // [NEW] Reset counters to ensure we don't use stale data
+    void resetDetectionState() {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        scans_near_h1_ = 0;
+        h1_hits_ = 0;
+        scans_near_h2_ = 0;
+        h2_hits_ = 0;
+        // Note: We do NOT clear dynamic_obstacles_ here, as those accumulate valuable data for Phase 2
+    }
+
+    // Logic: If we are close, and >30% of laser rays hit the spot -> Human is there.
     bool isHuman1AtStart() const { 
-        return (scans_near_h1_ > 20 && ((double)h1_hits_ / scans_near_h1_) > 0.1); 
+        if (scans_near_h1_ < 5) return false; // Not enough data
+        return (((double)h1_hits_ / scans_near_h1_) > 0.30); 
     }
     
     bool isHuman2AtStart() const { 
-        return (scans_near_h2_ > 20 && ((double)h2_hits_ / scans_near_h2_) > 0.1); 
+        if (scans_near_h2_ < 5) return false;
+        return (((double)h2_hits_ / scans_near_h2_) > 0.30); 
     }
 
     // Returns the best candidate location found so far
@@ -275,9 +298,12 @@ private:
         double rx = tf.transform.translation.x;
         double ry = tf.transform.translation.y;
 
+        // Proximity checks
         bool near_h1 = std::hypot(rx - H1_X, ry - H1_Y) < 3.5;
         bool near_h2 = std::hypot(rx - H2_X, ry - H2_Y) < 3.5;
 
+        // NOTE: We only increment global scan counters here if we aren't resetting. 
+        // But since we use resetDetectionState(), this logic works fine.
         if (near_h1) scans_near_h1_++;
         if (near_h2) scans_near_h2_++;
 
@@ -308,8 +334,9 @@ private:
             double wx = p_map.point.x;
             double wy = p_map.point.y;
 
-            if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.6) h1_hit_this_scan = true;
-            if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.6) h2_hit_this_scan = true;
+            // [FIX] Tightened radius to 0.3m (was 0.6m) to ignore background walls
+            if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.3) h1_hit_this_scan = true;
+            if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.3) h2_hit_this_scan = true;
 
             int map_val = get_map_val_unsafe(wx, wy);
             bool wall_nearby = false;
@@ -364,22 +391,34 @@ int main(int argc, char **argv) {
     // PHASE 1: CHECK ORIGINAL SPOTS
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
+    // Check H1
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h1_goal->position.x = detector->H1_X + 1.5; h1_goal->position.y = detector->H1_Y; h1_goal->orientation.w = 1.0;
+    
+    // [FIX] Reset state before checking to ensure fresh data
+    detector->resetDetectionState();
+    std::cout << "[Main] Checking Human 1..." << std::endl;
+    
     navigator.GoToPose(h1_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     navigator.Spin(); 
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    bool h1_found = detector->isHuman1AtStart();
 
+    // Check H2
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h2_goal->position.x = detector->H2_X + 1.5; h2_goal->position.y = detector->H2_Y; h2_goal->orientation.w = 1.0;
+    
+    // [FIX] Reset state before checking H2
+    detector->resetDetectionState();
+    std::cout << "[Main] Checking Human 2..." << std::endl;
+
     navigator.GoToPose(h2_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     navigator.Spin();
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
-
-    bool h1_found = detector->isHuman1AtStart();
     bool h2_found = detector->isHuman2AtStart();
+
     int missing_count = (h1_found ? 0 : 1) + (h2_found ? 0 : 1);
 
     std::cout << "[Main] Status: H1@" << (h1_found ? "Start" : "Moved") 
@@ -469,7 +508,36 @@ int main(int argc, char **argv) {
     int minutes = total_seconds / 60;
     int seconds = total_seconds % 60;
 
-    detector->reportFindings(verified_locations);
+    // NOTE: Need to pass the boolean flags found earlier to the report function
+    // But since reportFindings calculates them internally based on counters, 
+    // and we reset counters, we need to ensure the "found" state persists.
+    // However, for this specific project, the terminal output [Main] Status above is sufficient for debugging.
+    // The reportFindings uses current counters. Since we are at the end, and we might have moved away from H2,
+    // the counters for H2 might be low again.
+    
+    // To fix the report accuracy, we should rely on the booleans calculated in Phase 1:
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "       HUMAN DETECTION REPORT" << std::endl;
+    std::cout << "========================================" << std::endl;
+
+    if (h1_found) {
+        std::cout << "[Human 1] STILL AT ORIGINAL (" << detector->H1_X << ", " << detector->H1_Y << ") [DETECTED]" << std::endl;
+    } else {
+        std::cout << "[Human 1] MOVED from (" << detector->H1_X << ", " << detector->H1_Y << ")" << std::endl;
+        if (!verified_locations.empty()) std::cout << "          NEW LOCATION: (" << verified_locations[0].x << ", " << verified_locations[0].y << ")" << std::endl;
+        else std::cout << "          NEW LOCATION: Not found" << std::endl;
+    }
+
+    if (h2_found) {
+        std::cout << "[Human 2] STILL AT ORIGINAL (" << detector->H2_X << ", " << detector->H2_Y << ") [DETECTED]" << std::endl;
+    } else {
+        std::cout << "[Human 2] MOVED from (" << detector->H2_X << ", " << detector->H2_Y << ")" << std::endl;
+        size_t idx = (!h1_found && verified_locations.size() > 1) ? 1 : 0;
+        if (verified_locations.size() > idx) std::cout << "          NEW LOCATION: (" << verified_locations[idx].x << ", " << verified_locations[idx].y << ")" << std::endl;
+        else std::cout << "          NEW LOCATION: Not found" << std::endl;
+    }
+    std::cout << "========================================\n" << std::endl;
+
     std::cout << "[Main] Mission Completed in " << minutes << " min " << seconds << " sec." << std::endl;
 
     rclcpp::shutdown();

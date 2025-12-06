@@ -45,13 +45,16 @@ Setup for Ubuntu 24.04.3 LTS, Jazzy (Works for Windows 10 too):
         For my Ubuntu VM:
             Terminal 1:
             source /opt/ros/jazzy/setup.bash
-            cd Desktop/cse180/MRTP/MRTP/
+            cd /MRTP/MRTP/
+            colcon build
             source install/setup.bash
             ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
 
             Terminal 2:
             source /opt/ros/jazzy/setup.bash
-            cd /MRTP/tb4_humans_ws/
+            cd /MRTP/MRTP/
+            source install/setup.bash
+            cd ../tb4_humans_ws/
             colcon build
             source install/setup.bash
             ros2 run tb4_human_detector human_detector_node 
