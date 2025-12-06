@@ -22,13 +22,11 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v13 (Precision Bounds)
+// MRTP FINAL PROJECT: HUMAN DETECTOR (v11 Refined)
 // 
-// Updates:
-// 1. Bounds Tuned: X [+/- 14.5], Y [+/- 24.5]. 
-//    - Rejects wall ghost at 24.8.
-//    - Accepts humans at 14.0/24.0.
-// 2. Logic remains: Check Original -> Opportunistic Search -> Verify -> Report.
+// Based on: User's "Code that worked" (v11)
+// Fix: Moved 'resetCounters()' to execute AFTER arrival to prevent accumulation of 
+//      false positive hits while driving to the inspection point.
 // =============================================================================================
 
 #include <memory>
@@ -91,11 +89,12 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Precision Human Detector Ready.");
+        RCLCPP_INFO(this->get_logger(), "Human Detector Ready.");
     }
 
     bool hasMap() const { return have_map_.load(); }
     
+    // Call this before checking a specific location to clear old data
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         scans_near_h1_ = 0; h1_hits_ = 0;
@@ -117,7 +116,8 @@ public:
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            if (count < 30) continue; 
+            // Threshold: 40 hits
+            if (count < 40) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
@@ -125,10 +125,8 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // [FIX] PRECISION BOUNDS
-            // Warehouse is +/- 15 and +/- 25.
-            // 14.5 / 24.5 is safe for humans but excludes walls.
-            if (wx < -14.5 || wx > 14.5 || wy < -24.5 || wy > 24.5) continue;
+            // Bounds Check (from v11/txt)
+            if (wx < -14.6 || wx > 14.6 || wy < -24.6 || wy > 24.6) continue;
 
             candidates.push_back({wx, wy, count});
         }
@@ -308,7 +306,7 @@ private:
 
         for (size_t i = 0; i < scan->ranges.size(); ++i) {
             float r = scan->ranges[i];
-            if (!std::isfinite(r) || r < scan->range_min || r > 5.5) continue; 
+            if (!std::isfinite(r) || r < scan->range_min || r > 4.5) continue; 
 
             float angle = scan->angle_min + i * scan->angle_increment;
             geometry_msgs::msg::PointStamped p_laser, p_map;
@@ -329,7 +327,7 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            int check_rad = 10; 
+            int check_rad = 16; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {
                     int idx = (gy + dy) * map_.info.width + (gx + dx);
@@ -373,10 +371,10 @@ int main(int argc, char **argv) {
     navigator.SetInitialPose(init_pose);
     navigator.WaitUntilNav2Active();
 
+    // ---------------------------------------------------------
     // PHASE 1: CHECK ORIGINAL SPOTS
+    // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
-    
-    detector->resetCounters();
     
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h1_goal->position.x = detector->H1_X + 1.0; 
@@ -384,12 +382,14 @@ int main(int argc, char **argv) {
     h1_goal->orientation.w = 1.0;
     navigator.GoToPose(h1_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    
+    // [FIX] Reset counters AFTER arriving, but BEFORE spinning
+    detector->resetCounters();
+    
     navigator.Spin(); 
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
     bool h1_found = detector->isHuman1AtStart();
-    
-    detector->resetCounters();
 
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h2_goal->position.x = detector->H2_X + 1.0; 
@@ -397,6 +397,10 @@ int main(int argc, char **argv) {
     h2_goal->orientation.w = 1.0;
     navigator.GoToPose(h2_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    
+    // [FIX] Reset counters AFTER arriving at H2
+    detector->resetCounters();
+    
     navigator.Spin();
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
@@ -407,7 +411,9 @@ int main(int argc, char **argv) {
     std::cout << "[Main] Status: H1@" << (h1_found ? "Start" : "Moved") 
               << ", H2@" << (h2_found ? "Start" : "Moved") << std::endl;
 
+    // ---------------------------------------------------------
     // PHASE 2: VERIFIED SEARCH
+    // ---------------------------------------------------------
     std::vector<Candidate> verified_locations;
 
     if (missing_count == 0) {

@@ -108,7 +108,6 @@ Terminal Results For my test cases:
     Human 1 at (-4,-10):
         pc (linux):
 
-        
     Human 2 at (12,11):
 
     Human 1 at (-7, 12):
