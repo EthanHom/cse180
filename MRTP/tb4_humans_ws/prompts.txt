@@ -1,3 +1,63 @@
+Note for my Ubuntu VM, don't forget to use:
+    source /opt/ros/jazzy/setup.bash
+
+Setup for Ubuntu 24.04.3 LTS, Jazzy (Works for Windows 10 too):
+    Terminal commands:
+
+        Block 1:
+            locale  # check for UTF-8
+
+            sudo apt update && sudo apt install locales
+            sudo locale-gen en_US en_US.UTF-8
+            sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+            export LANG=en_US.UTF-8
+
+            locale  # verify settings
+
+        Block 2:
+            sudo apt install software-properties-common
+            sudo add-apt-repository universe
+
+        Block 3:
+            sudo apt update && sudo apt install curl -y
+            export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}')
+            curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
+            sudo dpkg -i /tmp/ros2-apt-source.deb
+
+
+        4: 
+            sudo apt update
+
+        5:
+            sudo apt upgrade
+
+        6:
+            sudo apt install ros-jazzy-desktop
+
+        7:
+            sudo apt update
+            sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+
+        source /opt/ros/jazzy/setup.bash
+
+
+    Terminal commands to run:
+        For my Ubuntu VM:
+            Terminal 1:
+            source /opt/ros/jazzy/setup.bash
+            cd Desktop/cse180/MRTP/MRTP/
+            source install/setup.bash
+            ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
+
+            Terminal 2:
+            source /opt/ros/jazzy/setup.bash
+            cd /MRTP/tb4_humans_ws/
+            colcon build
+            source install/setup.bash
+            ros2 run tb4_human_detector human_detector_node 
+
+
+
 This is everything I have right now. I'd like to try autonomous coverage algorithm 
     because I want the robot to use the map's data and generate its own path to cover 
     all the free space and check if each human as moved and where their new 

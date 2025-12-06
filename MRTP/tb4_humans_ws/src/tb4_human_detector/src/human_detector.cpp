@@ -1,6 +1,8 @@
 // run the project in terminal: 
 /* 
 
+FOR DOCKER
+
 Terminal 1:
 make vnc
 make bash
@@ -15,18 +17,9 @@ colcon build
 source install/setup.bash
 ros2 run tb4_human_detector human_detector_node 
 
+
 */
 
-
-
-
-// =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v9 (Compiler Fix)
-// 
-// Updates:
-// 1. Replaced std::pair with 'Candidate' struct to fix GCC ABI warnings.
-// 2. Maintained all previous logic (Wall Buffer: 16, Bounds: +/-14.6/24.6).
-// =============================================================================================
 
 #include <memory>
 #include <vector>
