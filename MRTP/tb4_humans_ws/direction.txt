@@ -1,16 +1,3 @@
-My questions:
-    Does this implementation follow what the MRTP textbook would recommend? 
-    Is this implementation also correct?
-    Are the results from the terminal correct?
-
-Note: 
-    From student: There’s a possibility your scanning results may be off if you’re using the laser scanner because it’s rotated 90 deg from the robot, it’s not perfectly straight
-    From professor: some of you indicated today that the range finder may be oriented wrong on the robot. Upon further investigation I can affirm this is not the case. In particular, you have a sensor with a 360 field of view, so, so there is no "forward" direction. If you run
-
-        ros2 topic echo /scan
-
-        you can see that the sensor readings are with respect to the frame rplidar_link. The relative transformation between rplidar_link and base_link can be retrieved from /tf_static. Finally, as common for all laser scanners (you can confirm that with ros2 interface show sensor_msgs/msg/LaserScan) the zero angle is along the x axis of the frame of the sensor (that is rplidar_link) and readings are around the positive Z axis. Since angle_min is 0 (as you can see from ros2 topic echo /scan) it means that the first reading aligned with the x axis of the sensor frame and from there you go counterclockwise. I advise you inspect the configuration with Rviz to get a better idea.
-
 Directions: 
     Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
 
@@ -61,41 +48,6 @@ Directions:
     A: It is not necessary for the entire team to be present during the demo and presentation. One (or two) of you can make the presentation during any of the lab sections you registered for.
     Q: What is the format of the presentation?
     A: You build and run the code in front of the TA and describe how you solved the problem, answering any question the TA may have. The presentation is not in front of the class and you do not have to present slides.
-
-KNOWN OBSTACTLES:
-    SHELF_BIG_0: (x: -8.5, y: -13)
-    SHELF_BIG_1: (x: 6.5, y: -13)
-    SHELF_BIG_2: (x: -1.5, y: -13)
-    SHELF_3: (x: 13.5, y: 4.5)
-    SHELF_4: (x: 10, y: 4.5)
-    SHELF_5: (x: 13.5, y: -21)
-    SHELF_6: (x: 13.5, y: -15)
-    SHELF_7: (x: 0.4, y: -2)
-    SHELF_BIG_3: (x: 3.5, y: 9.5, yaw(rad): 1.57)
-    SHELF_BIG_4: (x: -1.3, y: 18.5, yaw(rad): 1.57)
-    SHELF_0: (x: -10, y: 21.5, yaw(rad): 1.57)
-    SHELF_1: (x: -7, y: 23.6, yaw(rad): 1.57)
-    SHELF_2: (x: -4, y: 21.5, yaw(rad): 1.57)
-    BARRIER_0: (x: -10.4, y: 14.75, yaw(rad): 1.57)
-    BARRIER_1: (x: -10.4, y: 10.5, yaw(rad): 1.57)
-    BARRIER_2: (x: -10.4, y: 6.5, yaw(rad): 1.57)
-    BARRIER_3: (x: -12.85, y: 4.85)
-    CHAIR_0: (x: 14.3, y: -5.5, yaw(rad): 3)
-    CHAIR_1: (x: 14.3, y: -4, yaw(rad): -3)
-    FCHAIR_0: (x: -11.5, y: 6.4, yaw(rad): -1.8)
-    FCHAIR1: (x: -14, y: 6.5, yaw(rad): 1.9)
-    TABLE0: (x: -12.7, y: 6.5)
-
-Corners of the warehouse (estimated and based on my screenshot of map):
-    (-14, 24) - TOP LEFT 
-    (14, 24) - TOP RIGHT
-    (-14, -24) - BOTTOM LEFT
-    (14, -24) - BOTTOM RIGHT
-    (in the middle of the grid, that is (0,0).)
-
-Where Humans are located when not moved:
-    human1 - (1.00, -1.00)
-    human2 - (-12.00, 15.00)
 
 
 Terminal Results for my test cases (mac and pc are both using docker, im just specifying which machine is which):
@@ -2798,6 +2750,513 @@ Terminal Results for my test cases (mac and pc are both using docker, im just sp
             
     Human 1 at (2,-12), Human 2 at (-6,14):
         pc:
+            (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node
+            [INFO] [1765082278.276961177] [tb4_human_detector]: Final Human Detector Ready.
+            [INFO] [1765082278.390443037] [navigator]: Created instance of Navigator
+
+            [Main] Waiting for Map...
+            [WARN] [1765082278.391291365] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+            [Main] Map Received.
+            [INFO] [1765082278.697474593] [navigator]: Inside SetInitialPose
+            [INFO] [1765082278.698212904] [navigator]: Waiting for Nav2 to activate...
+            [INFO] [1765082278.698255511] [navigator]: Waiting for amcl
+            [INFO] [1765082278.723646328] [navigator]: amcl active
+            [INFO] [1765082278.726133801] [navigator]: acml is ready
+            [INFO] [1765082278.726225015] [navigator]: Waiting for initial pose
+            [INFO] [1765082278.759767058] [navigator]: initial pose is received
+            [INFO] [1765082278.759833668] [navigator]: Waiting for bt_navigator
+            [INFO] [1765082278.801614849] [navigator]: bt_navigator active
+            [INFO] [1765082278.810850537] [navigator]: bt_navigator is ready
+            [INFO] [1765082278.810964754] [navigator]: Nav2 is ready!
+
+            [Main] Phase 1: Checking original locations...
+            [INFO] [1765082278.810995359] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082278.823642460] [navigator]: GoToPose request was accepted
+            [INFO] [1765082332.603860063] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082332.604038792] [navigator]: Goal was achieved
+            [INFO] [1765082332.604202819] [navigator]: Waiting for Spin action server
+            [INFO] [1765082332.608802573] [navigator]: In task Spin response callback
+            [INFO] [1765082332.608889987] [navigator]: Goal accepted by server, waiting for result
+            [INFO] [1765082332.609525391] [navigator]: Spin request was accepted
+            [INFO] [1765082334.909805992] [navigator]: Task Spin got result
+            [ERROR] [1765082334.909861601] [navigator]: Goal was achieved
+            [INFO] [1765082334.910013325] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082334.913468389] [navigator]: GoToPose request was accepted
+            [INFO] [1765082484.078955078] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082484.079138608] [navigator]: Goal was achieved
+            [INFO] [1765082484.079269130] [navigator]: Waiting for Spin action server
+            [INFO] [1765082484.088576643] [navigator]: In task Spin response callback
+            [INFO] [1765082484.088653655] [navigator]: Goal accepted by server, waiting for result
+            [INFO] [1765082484.088839285] [navigator]: Spin request was accepted
+            [INFO] [1765082486.190819094] [navigator]: Task Spin got result
+            [ERROR] [1765082486.190880903] [navigator]: Goal was achieved
+            [Main] Status: H1@Moved, H2@Moved
+            [Main] WARNING: Need to find 2 more human(s). Starting Search...
+
+            [Main] INTERRUPT: Investigating candidate at (2.2, -12.2)...
+            [INFO] [1765082486.191845439] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082486.194712345] [navigator]: GoToPose request was accepted
+            [INFO] [1765082665.517935122] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082665.518051940] [navigator]: Goal was achieved
+            [INFO] [1765082665.518140053] [navigator]: Waiting for Spin action server
+            [INFO] [1765082665.520203663] [navigator]: In task Spin response callback
+            [INFO] [1765082665.520292576] [navigator]: Goal accepted by server, waiting for result
+            [INFO] [1765082665.520419895] [navigator]: Spin request was accepted
+            [INFO] [1765082667.420761682] [navigator]: Task Spin got result
+            [ERROR] [1765082667.420819891] [navigator]: Goal was achieved
+            [Main] CONFIRMED HUMAN FOUND!
+            [Main] Navigating to WP 1/89...[INFO] [1765082667.421025122] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082667.422681470] [navigator]: GoToPose request was accepted
+            [INFO] [1765082746.660549930] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082746.660631242] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 2/89...[INFO] [1765082746.660849174] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082746.662889874] [navigator]: GoToPose request was accepted
+            [INFO] [1765082761.358308366] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082761.358481090] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 3/89...[INFO] [1765082761.358724824] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082761.360479370] [navigator]: GoToPose request was accepted
+            [INFO] [1765082776.245895345] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082776.245984958] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 4/89...[INFO] [1765082776.246408721] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082776.251017697] [navigator]: GoToPose request was accepted
+            [INFO] [1765082791.570153947] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082791.570383573] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 5/89...[INFO] [1765082791.570608098] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082791.573802257] [navigator]: GoToPose request was accepted
+            [INFO] [1765082805.889987358] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082805.890078672] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 6/89...[INFO] [1765082805.890976003] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082805.892586438] [navigator]: GoToPose request was accepted
+            [INFO] [1765082831.458858002] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082831.458951922] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 7/89...[INFO] [1765082831.459162568] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082831.461462960] [navigator]: GoToPose request was accepted
+            [INFO] [1765082846.382147370] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082846.382314100] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 8/89...[INFO] [1765082846.382572545] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082846.386543444] [navigator]: GoToPose request was accepted
+            [INFO] [1765082860.650355571] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082860.650588705] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 9/89...[INFO] [1765082860.650740428] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082860.652357670] [navigator]: GoToPose request was accepted
+            [INFO] [1765082874.724295344] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082874.724356753] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 10/89...[INFO] [1765082874.724691203] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082874.735751448] [navigator]: GoToPose request was accepted
+            [INFO] [1765082889.429049675] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082889.429142089] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 11/89...[INFO] [1765082889.429267907] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082889.433303096] [navigator]: GoToPose request was accepted
+            [INFO] [1765082903.203993830] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082903.204332780] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 12/89...[INFO] [1765082903.206360776] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082903.211742963] [navigator]: GoToPose request was accepted
+            [INFO] [1765082917.490159039] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082917.490219448] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 13/89...[INFO] [1765082917.490336664] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082917.494422643] [navigator]: GoToPose request was accepted
+            [INFO] [1765082925.732579995] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082925.732646204] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 14/89...[INFO] [1765082925.732872938] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082925.736312045] [navigator]: GoToPose request was accepted
+            [INFO] [1765082935.076395848] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082935.076437153] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 15/89...[INFO] [1765082935.076571473] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082935.077864958] [navigator]: GoToPose request was accepted
+            [INFO] [1765082943.745635313] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082943.745771828] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 16/89...[INFO] [1765082943.745994354] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082943.747842468] [navigator]: GoToPose request was accepted
+            [INFO] [1765082954.012824803] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082954.012879811] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 17/89...[INFO] [1765082954.013054836] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082954.014314222] [navigator]: GoToPose request was accepted
+            [INFO] [1765082964.136202008] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082964.136284920] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 18/89...[INFO] [1765082964.136489350] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082964.138064179] [navigator]: GoToPose request was accepted
+            [INFO] [1765082973.063441598] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082973.063499904] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 19/89...[INFO] [1765082973.063707425] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082973.068208280] [navigator]: GoToPose request was accepted
+            [INFO] [1765082981.787750015] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082981.787809724] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 20/89...[INFO] [1765082981.787990750] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082981.789652091] [navigator]: GoToPose request was accepted
+            [INFO] [1765082997.097762121] [navigator]: Task Go to Pose got result
+            [ERROR] [1765082997.097843532] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 21/89...[INFO] [1765082997.098011457] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765082997.098935992] [navigator]: GoToPose request was accepted
+            [INFO] [1765083023.247547639] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083023.247637252] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 22/89...[INFO] [1765083023.247830280] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083023.250673393] [navigator]: GoToPose request was accepted
+            [INFO] [1765083054.425426557] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083054.425553876] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 23/89...[INFO] [1765083054.425719200] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083054.426993389] [navigator]: GoToPose request was accepted
+            [INFO] [1765083081.362108132] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083081.362337465] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 24/89...[INFO] [1765083081.362858841] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083081.364367862] [navigator]: GoToPose request was accepted
+            [INFO] [1765083095.272346714] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083095.272437427] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 25/89...[INFO] [1765083095.272721268] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083095.276092349] [navigator]: GoToPose request was accepted
+            [INFO] [1765083104.147170118] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083104.147273033] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 26/89...[INFO] [1765083104.147432656] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083104.150204255] [navigator]: GoToPose request was accepted
+            [INFO] [1765083152.233802268] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083152.233889781] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 27/89...[INFO] [1765083152.234314241] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083152.235792050] [navigator]: GoToPose request was accepted
+            [INFO] [1765083160.578272501] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083160.578374015] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 28/89...[INFO] [1765083160.578594447] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083160.579855926] [navigator]: GoToPose request was accepted
+            [INFO] [1765083192.749549125] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083192.749644238] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 29/89...[INFO] [1765083192.749869671] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083192.751368486] [navigator]: GoToPose request was accepted
+            [INFO] [1765083216.648117679] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083216.648189189] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 30/89...[INFO] [1765083216.648380715] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083216.649413855] [navigator]: GoToPose request was accepted
+            [INFO] [1765083274.532079747] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083274.532178161] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 31/89...[INFO] [1765083274.532368887] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083274.535949772] [navigator]: GoToPose request was accepted
+            [INFO] [1765083301.508796443] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083301.508910258] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 32/89...[INFO] [1765083301.509139189] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083301.511980675] [navigator]: GoToPose request was accepted
+            [INFO] [1765083315.773950613] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083315.774049827] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 33/89...[INFO] [1765083315.774290160] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083315.777776643] [navigator]: GoToPose request was accepted
+            [INFO] [1765083323.846087617] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083323.846157427] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 34/89...[INFO] [1765083323.846324950] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083323.850703459] [navigator]: GoToPose request was accepted
+            [INFO] [1765083367.629858706] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083367.629966521] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 35/89...[INFO] [1765083367.630452888] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083367.633433602] [navigator]: GoToPose request was accepted
+            [INFO] [1765083376.094268222] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083376.094330130] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 36/89...[INFO] [1765083376.094547961] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083376.096051970] [navigator]: GoToPose request was accepted
+            [INFO] [1765083390.167562030] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083390.167635640] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 37/89...[INFO] [1765083390.167864172] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083390.169477997] [navigator]: GoToPose request was accepted
+            [INFO] [1765083414.481065256] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083414.481247081] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 38/89...[INFO] [1765083414.481638237] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083414.487095604] [navigator]: GoToPose request was accepted
+            [INFO] [1765083439.863513913] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083439.863641831] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 39/89...[INFO] [1765083439.863815155] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083439.864755086] [navigator]: GoToPose request was accepted
+            [INFO] [1765083463.186171518] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083463.186293531] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 40/89...[INFO] [1765083463.186504554] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083463.187570968] [navigator]: GoToPose request was accepted
+            [INFO] [1765083483.481262550] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083483.481352962] [navigator]: Goal was aborted
+            INTERRUPTED/SKIPPED
+            [Main] Navigating to WP 41/89...[INFO] [1765083483.481592993] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083483.482536517] [navigator]: GoToPose request was accepted
+            [INFO] [1765083505.611917106] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083505.612016120] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 42/89...[INFO] [1765083505.612207546] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083505.613737254] [navigator]: GoToPose request was accepted
+            [INFO] [1765083532.548293282] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083532.548385795] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 43/89...[INFO] [1765083532.548949876] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083532.550539703] [navigator]: GoToPose request was accepted
+            [INFO] [1765083546.839695842] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083546.839758150] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 44/89...[INFO] [1765083546.839919573] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083546.845011075] [navigator]: GoToPose request was accepted
+            [INFO] [1765083561.401739091] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083561.401819102] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 45/89...[INFO] [1765083561.402003827] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083561.402985163] [navigator]: GoToPose request was accepted
+            [INFO] [1765083576.732466101] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083576.732534810] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 46/89...[INFO] [1765083576.732716435] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083576.735653737] [navigator]: GoToPose request was accepted
+            [INFO] [1765083590.907236816] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083590.907468848] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 47/89...[INFO] [1765083590.907738285] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083590.911934365] [navigator]: GoToPose request was accepted
+            [INFO] [1765083606.030564733] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083606.030605939] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 48/89...[INFO] [1765083606.030736956] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083606.032548597] [navigator]: GoToPose request was accepted
+            [INFO] [1765083670.264735726] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083670.264835739] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 49/89...[INFO] [1765083670.265044267] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083670.266585672] [navigator]: GoToPose request was accepted
+            [INFO] [1765083678.738060745] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083678.738128455] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 50/89...[INFO] [1765083678.738329482] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083678.740441672] [navigator]: GoToPose request was accepted
+            [INFO] [1765083687.801222003] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083687.801306515] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 51/89...[INFO] [1765083687.801497941] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083687.804421042] [navigator]: GoToPose request was accepted
+            [INFO] [1765083701.670703382] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083701.670809096] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 52/89...[INFO] [1765083701.670954916] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083701.672495623] [navigator]: GoToPose request was accepted
+            [INFO] [1765083726.900398496] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083726.900480906] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 53/89...[INFO] [1765083726.900698334] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083726.906636997] [navigator]: GoToPose request was accepted
+            [INFO] [1765083752.119425769] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083752.119492478] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 54/89...[INFO] [1765083752.119710908] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083752.121174106] [navigator]: GoToPose request was accepted
+            [INFO] [1765083775.841583906] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083775.841683420] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 55/89...[INFO] [1765083775.841881448] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083775.843168932] [navigator]: GoToPose request was accepted
+            [INFO] [1765083801.573508252] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083801.573615267] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 56/89...[INFO] [1765083801.573831896] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083801.578168276] [navigator]: GoToPose request was accepted
+            [INFO] [1765083827.752393207] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083827.752455215] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 57/89...[INFO] [1765083827.752618037] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083827.753917013] [navigator]: GoToPose request was accepted
+            [INFO] [1765083842.521117319] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083842.521650990] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 58/89...[INFO] [1765083842.522482001] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083842.525908457] [navigator]: GoToPose request was accepted
+            [INFO] [1765083851.045633513] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083851.045714324] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 59/89...[INFO] [1765083851.045964359] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083851.047312350] [navigator]: GoToPose request was accepted
+            [INFO] [1765083860.092953020] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083860.093032332] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 60/89...[INFO] [1765083860.093264068] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083860.101163980] [navigator]: GoToPose request was accepted
+            [INFO] [1765083868.975269230] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083868.975488560] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 61/89...[INFO] [1765083868.975728493] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083868.977146687] [navigator]: GoToPose request was accepted
+            [INFO] [1765083884.443478066] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083884.443581282] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 62/89...[INFO] [1765083884.443787314] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083884.444785967] [navigator]: GoToPose request was accepted
+            [INFO] [1765083901.446765173] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083901.446854984] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 63/89...[INFO] [1765083901.447226127] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083901.453416556] [navigator]: GoToPose request was accepted
+            [INFO] [1765083926.623209660] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083926.623259567] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 64/89...[INFO] [1765083926.623412487] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083926.625212131] [navigator]: GoToPose request was accepted
+            [INFO] [1765083951.551727840] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083951.551820953] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 65/89...[INFO] [1765083951.552070987] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083951.553191138] [navigator]: GoToPose request was accepted
+            [INFO] [1765083976.925286317] [navigator]: Task Go to Pose got result
+            [ERROR] [1765083976.925380430] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 66/89...[INFO] [1765083976.925650667] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765083976.926957247] [navigator]: GoToPose request was accepted
+            [INFO] [1765084002.494164166] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084002.494217374] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 67/89...[INFO] [1765084002.494443407] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084002.495688286] [navigator]: GoToPose request was accepted
+            [INFO] [1765084027.247407021] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084027.247586145] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 68/89...[INFO] [1765084027.247814075] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084027.248896318] [navigator]: GoToPose request was accepted
+            [INFO] [1765084045.173659721] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084045.173762434] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 69/89...[INFO] [1765084045.174051573] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084045.175561575] [navigator]: GoToPose request was accepted
+            [INFO] [1765084059.893907319] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084059.893961026] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 70/89...[INFO] [1765084059.894156052] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084059.895609643] [navigator]: GoToPose request was accepted
+            [INFO] [1765084213.667449760] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084213.667506967] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 71/89...[INFO] [1765084213.667738898] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084213.670735296] [navigator]: GoToPose request was accepted
+            [INFO] [1765084228.962544241] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084228.962602449] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 72/89...[INFO] [1765084228.962758470] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084228.964420190] [navigator]: GoToPose request was accepted
+            [INFO] [1765084243.832299537] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084243.832388950] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 73/89...[INFO] [1765084243.832817811] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084243.833850657] [navigator]: GoToPose request was accepted
+            [INFO] [1765084258.946356405] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084258.946572833] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 74/89...[INFO] [1765084258.946852670] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084258.953813674] [navigator]: GoToPose request was accepted
+            [INFO] [1765084273.026315647] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084273.026839016] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 75/89...[INFO] [1765084273.027119453] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084273.030979064] [navigator]: GoToPose request was accepted
+            [INFO] [1765084305.030039396] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084305.030101504] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 76/89...[INFO] [1765084305.030376839] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084305.031363067] [navigator]: GoToPose request was accepted
+            [INFO] [1765084320.928109833] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084320.928204246] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 77/89...[INFO] [1765084320.928402272] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084320.929482114] [navigator]: GoToPose request was accepted
+            [INFO] [1765084329.392367859] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084329.392457271] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 78/89...[INFO] [1765084329.392606790] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084329.393590319] [navigator]: GoToPose request was accepted
+            [INFO] [1765084338.461333368] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084338.461417579] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 79/89...[INFO] [1765084338.461728420] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084338.468375094] [navigator]: GoToPose request was accepted
+            [INFO] [1765084347.173091582] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084347.173166291] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 80/89...[INFO] [1765084347.173406022] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084347.175605904] [navigator]: GoToPose request was accepted
+            [INFO] [1765084356.231137249] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084356.231187955] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 81/89...[INFO] [1765084356.231326171] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084356.232156967] [navigator]: GoToPose request was accepted
+            [INFO] [1765084370.413480116] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084370.413555926] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 82/89...[INFO] [1765084370.413891170] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084370.414987614] [navigator]: GoToPose request was accepted
+            [INFO] [1765084384.683921538] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084384.684022350] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 83/89...[INFO] [1765084384.684257378] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084384.685186490] [navigator]: GoToPose request was accepted
+            [INFO] [1765084409.011819918] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084409.011933133] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 84/89...[INFO] [1765084409.012170964] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084409.013511340] [navigator]: GoToPose request was accepted
+            [INFO] [1765084426.898941679] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084426.899041892] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 85/89...[INFO] [1765084426.899232417] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084426.901949568] [navigator]: GoToPose request was accepted
+            [INFO] [1765084452.909091937] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084452.909166746] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 86/89...[INFO] [1765084452.909362272] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084452.911409539] [navigator]: GoToPose request was accepted
+            [INFO] [1765084477.457524095] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084477.457642500] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 87/89...[INFO] [1765084477.457890311] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084477.459371273] [navigator]: GoToPose request was accepted
+            [INFO] [1765084501.815902013] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084501.816079334] [navigator]: Goal was achieved
+            DONE
+            [Main] Navigating to WP 88/89...[INFO] [1765084501.816879230] [navigator]: Waiting for NavigateToGoal action server
+            [INFO] [1765084501.819906090] [navigator]: GoToPose request was accepted
+            [INFO] [1765084548.295867280] [navigator]: Task Go to Pose got result
+            [ERROR] [1765084548.295976294] [navigator]: Goal was achieved
+            DONE
+
+            ========================================
+                HUMAN DETECTION REPORT
+            ========================================
+            [Human 1] MOVED from (1, -1)
+                    NEW LOCATION: (2.2, -12.2)
+            [Human 2] MOVED from (-12, 15)
+                    NEW LOCATION: (2.2, -12.2)
+            ========================================
+
+            [Main] Mission Completed in 37 min 49 sec.
+
             
 
 

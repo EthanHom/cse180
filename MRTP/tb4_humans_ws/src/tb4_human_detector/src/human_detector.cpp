@@ -24,6 +24,7 @@ FOR DOCKER on Mac
 */
 
 
+// includes for C++ containers and ROS2 libraries
 #include <memory>
 #include <vector>
 #include <cmath>
@@ -50,6 +51,7 @@ FOR DOCKER on Mac
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "navigation/navigation.hpp" 
 
+// struct for a detection cluster / manage detection candidates
 struct DetectionCluster {
     double x, y;
     int count;
@@ -60,26 +62,31 @@ struct Candidate {
     double y = 0.0;
 };
 
+// ROS2 Node Class for the Human Detector
 class HumanDetector : public rclcpp::Node {
 public:
     HumanDetector()
-        : Node("tb4_human_detector"),
-          tf_buffer_(this->get_clock()),
+        : Node("tb4_human_detector"),   // node name
+          tf_buffer_(this->get_clock()),    // tf2 buffer for transforming between frames
           tf_listener_(tf_buffer_)
     {
+        // from Chapter 5, parameter declaration
         if (!this->has_parameter("use_sim_time")) {
             this->declare_parameter("use_sim_time", true);
         }
         this->set_parameter(rclcpp::Parameter("use_sim_time", true));
-
+        
+        // subscribe to /map (Chapter 6/8) using QoS for reliability
         map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/map", rclcpp::QoS(1).transient_local().reliable(),
             std::bind(&HumanDetector::mapCallback, this, std::placeholders::_1));
 
+        // subscribe to /scan (Chapter 7)
         scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan", rclcpp::SensorDataQoS(),
             std::bind(&HumanDetector::scanCallback, this, std::placeholders::_1));
 
+        // subscribe to AMCL pose (Chapter 9) to know where robot is
         amcl_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
@@ -87,16 +94,18 @@ public:
         RCLCPP_INFO(this->get_logger(), "Final Human Detector Ready.");
     }
 
+    // Helper to check if map is received
     bool hasMap() const { return have_map_.load(); }
     
-    // Call this to clear data
+    // Call this to clear data - clears detection counters for a fresh measurement
     void resetCounters() {
         std::lock_guard<std::mutex> lock(data_mutex_);
         scans_near_h1_ = 0; h1_hits_ = 0;
         scans_near_h2_ = 0; h2_hits_ = 0;
     }
 
-    // Increased threshold to 30% to avoid false positives from noise
+    // if >30% of laser scans hit something at the start locations, human is there
+    // threshold to 30% to avoid false positives from noise
     bool isHuman1AtStart() const { 
         if (scans_near_h1_ < 10) return false;
         return (((double)h1_hits_ / scans_near_h1_) > 0.30); 
@@ -107,12 +116,16 @@ public:
         return (((double)h2_hits_ / scans_near_h2_) > 0.30); 
     }
 
+    // iterates over `dynamic_obstacles_` map to find the cluster with the most hits
     Candidate getBestNewCandidate() {
         std::lock_guard<std::mutex> lock(data_mutex_);
+
+        // Filters out points with low confidence (<30 hits) or out of bounds)
+        // Returns the X,Y of the highest confidence unknown object
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            // [FIX] Threshold: 30 hits ensures solid object
+            // Threshold: 30 hits ensures solid object
             if (count < 30) continue; 
             
             double wx = coord.first / 10.0; 
@@ -122,10 +135,9 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // [FIX] Bounds: +/- 14.5 and +/- 24.5
-            // This captures (14, -24) but excludes the walls at 24.8/25.0
-            // if (wx < -14.5 || wx > 14.5 || wy < -24.5 || wy > 24.5) continue;
-            if (wx < -14.25 || wx > 14.25 || wy < -24.25 || wy > 24.25) continue;
+            // if (wx < -14.5 || wx > 14.5 || wy < -24.5 || wy > 24.5) continue;  // prone to false positives
+            // if (wx < -14 || wx > 14 || wy < -24 || wy > 24) continue;    // doesn't get humans close to wall
+            if (wx < -14.25 || wx > 14.25 || wy < -24.25 || wy > 24.25) continue;   // good boundary
 
             candidates.push_back({wx, wy, count});
         }
@@ -137,6 +149,7 @@ public:
         return {candidates[0].x, candidates[0].y};
     }
     
+    // Removes a candidate from the map after we have visited/verified it
     void clearCandidate(double x, double y) {
         std::lock_guard<std::mutex> lock(data_mutex_);
         for (auto it = dynamic_obstacles_.begin(); it != dynamic_obstacles_.end();) {
@@ -150,6 +163,7 @@ public:
         }
     }
 
+    // Helper to read occupancy grid data at a specific (x,y)
     int8_t getMapValue(double x, double y) {
         std::lock_guard<std::mutex> lock(map_mutex_);
         if (!have_map_) return -1;
@@ -159,13 +173,20 @@ public:
         return map_.data[grid_y * map_.info.width + grid_x];
     }
 
+    // Generates a "lawnmower" path (waypoints) to cover the map
     std::vector<geometry_msgs::msg::PoseStamped> generateCoveragePath() {
+
+        // ... (Iterates x/y with step_size 3.5m) ...
+        // ... (Checks if waypoints are in free space using `is_free_unsafe`) ...
+        // Sorts points to visit the nearest one next (Greedy Path Planning).
+
         std::vector<geometry_msgs::msg::PoseStamped> goals;
         std::lock_guard<std::mutex> lock(map_mutex_); 
         if (!have_map_) return goals;
 
         double step_size = 3.5; 
         
+        // Helper to check if a point is in free space
         auto is_free_unsafe = [&](double wx, double wy) {
             int grid_x = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int grid_y = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
@@ -186,6 +207,7 @@ public:
             }
         }
 
+        // Sort goals to visit the nearest one next (Greedy Path Planning)
         if (goals.empty()) return goals;
         double current_x = current_pose_.position.x;
         double current_y = current_pose_.position.y;
@@ -207,6 +229,7 @@ public:
         return sorted_goals;
     }
 
+    // Prints the final results to the terminal.
     void reportFindings(bool h1_found, bool h2_found, const std::vector<Candidate>& verified_locs) {
         std::cout << "\n========================================" << std::endl;
         std::cout << "       HUMAN DETECTION REPORT" << std::endl;
@@ -237,10 +260,12 @@ public:
         std::cout << "========================================\n" << std::endl;
     }
 
+    // Constants for the human locations
     const double H1_X = 1.0, H1_Y = -1.0;
     const double H2_X = -12.0, H2_Y = 15.0;
 
 private:
+    // Member variables for subscriptions, data storage, and mutexes
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr amcl_sub_;
@@ -260,31 +285,40 @@ private:
     int scans_near_h1_{0}, h1_hits_{0};
     int scans_near_h2_{0}, h2_hits_{0};
 
+    // `dynamic_obstacles_` maps grid coordinates to hit counts
     std::map<std::pair<int,int>, int> dynamic_obstacles_;
 
+    // Callbacks to store data
     void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(map_mutex_);
         map_ = *msg;
         have_map_.store(true);
     }
 
+    // Callback to store AMCL pose
     void amclCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(pose_mutex_);
         current_pose_ = msg->pose.pose;
         is_localized_.store(true);
     }
 
+    // Detection
     void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) {
         if (!have_map_.load() || !is_localized_.load()) return;
 
+        // Get transform from "map" to laser frame (Chapter 4)
         geometry_msgs::msg::TransformStamped tf;
         try {
             tf = tf_buffer_.lookupTransform("map", scan->header.frame_id, tf2::TimePointZero);
         } catch (const tf2::TransformException &ex) { return; }
 
+        // Check if robot is physically near the starting spots H1/H2
+
+        // Calculate the distance between the robot and the starting spots
         double rx = tf.transform.translation.x;
         double ry = tf.transform.translation.y;
 
+        // Check if robot is physically near the starting spots H1/H2
         bool near_h1 = std::hypot(rx - H1_X, ry - H1_Y) < 3.5;
         bool near_h2 = std::hypot(rx - H2_X, ry - H2_Y) < 3.5;
 
@@ -303,9 +337,15 @@ private:
 
         std::lock_guard<std::mutex> lock(map_mutex_);
 
+        // Iterate over laser ranges (Chapter 7)
         for (size_t i = 0; i < scan->ranges.size(); ++i) {
-            float r = scan->ranges[i];
             
+            // Convert polar (range/angle) to Cartesian (x/y)
+            // Transform point to Map Frame using tf2::doTransform
+            
+            float r = scan->ranges[i];
+
+            // Skip invalid ranges
             if (!std::isfinite(r) || r < scan->range_min || r > 5.5) continue; 
 
             float angle = scan->angle_min + i * scan->angle_increment;
@@ -319,6 +359,7 @@ private:
             double wx = p_map.point.x;
             double wy = p_map.point.y;
 
+            // Check if point hits H1/H2 original location
             if (near_h1 && std::hypot(wx - H1_X, wy - H1_Y) < 0.5) h1_hit_this_scan = true;
             if (near_h2 && std::hypot(wx - H2_X, wy - H2_Y) < 0.5) h2_hit_this_scan = true;
 
@@ -327,7 +368,7 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            // [FIX] Strong Wall Buffer: 18 cells (54cm). 
+            // Strong Wall Buffer: 18 cells (54cm). 
             // Ensures we do not detect walls as humans even with drift.
             int check_rad = 18; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
@@ -342,6 +383,10 @@ private:
                 }
             }
 
+            // "Background Subtraction":
+            // 1. Get map value at hit location
+            // 2. Check nearby cells for walls (buffer)
+            // 3. If map says FREE (0) but laser says HIT, increment dynamic_obstacle count
             if (map_val == 0 && !wall_nearby && r < 4.5) {
                 std::lock_guard<std::mutex> data_lock(data_mutex_);
                 int key_x = static_cast<int>(std::round(wx * 10));
@@ -358,7 +403,10 @@ private:
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     auto detector = std::make_shared<HumanDetector>();
+    // initialize navigator wrapper (chapter 6)
     Navigator navigator(true);
+
+    // spin the detector node in a separate/background thread so callbacks process
     std::thread spin_thread([&]() { rclcpp::spin(detector); });
 
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -367,9 +415,11 @@ int main(int argc, char **argv) {
     while (rclcpp::ok() && !detector->hasMap()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     std::cout << "[Main] Map Received." << std::endl;
 
+    // set initial pose for AMCL
     auto init_pose = std::make_shared<geometry_msgs::msg::Pose>();
     init_pose->position.x = 2.12; init_pose->position.y = -21.3;
     init_pose->orientation.z = 0.7071; init_pose->orientation.w = 0.7071;
+    // set initial pose
     navigator.SetInitialPose(init_pose);
     navigator.WaitUntilNav2Active();
 
@@ -378,19 +428,24 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------
     std::cout << "\n[Main] Phase 1: Checking original locations..." << std::endl;
     
-    // [FIX] Logic: Move, then Reset Counters, then Spin & Measure
+    // Logic: Move, then Reset Counters, then Spin & Measure
     auto h1_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h1_goal->position.x = detector->H1_X + 1.0; 
     h1_goal->position.y = detector->H1_Y; 
     h1_goal->orientation.w = 1.0;
+    // send robot to H1
     navigator.GoToPose(h1_goal);
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
+    // measure hits at H1
     detector->resetCounters(); // Reset AFTER arrival
-    navigator.Spin(); 
+    navigator.Spin();   // spin robot to update laser scan
+    // wait
     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
     
     bool h1_found = detector->isHuman1AtStart();
+
+    // repeat for H2
 
     auto h2_goal = std::make_shared<geometry_msgs::msg::Pose>();
     h2_goal->position.x = detector->H2_X + 1.0; 
@@ -421,12 +476,16 @@ int main(int argc, char **argv) {
     else {
         std::cout << "[Main] WARNING: Need to find " << missing_count << " more human(s). Starting Search..." << std::endl;
         
+        // generate coverage/search path
         auto waypoints = detector->generateCoveragePath();
         int wp_count = 0;
 
+        // iterate over waypoints
         for (const auto& wp : waypoints) {
+            // if we have found all humans, break
             if (verified_locations.size() >= static_cast<size_t>(missing_count)) break;
 
+            // check if detector found a new candidate (dynamic obstacle)
             Candidate cand = detector->getBestNewCandidate();
             
             if (cand.x != 0.0) {
@@ -437,14 +496,18 @@ int main(int argc, char **argv) {
 
                 if (!already_checked) {
                     std::cout << "\n[Main] INTERRUPT: Investigating candidate at (" << cand.x << ", " << cand.y << ")..." << std::endl;
-                    navigator.CancelTask(); 
+                    // Cancel search path to investigate candidate
+                    navigator.CancelTask();
                     
+                    // create goal pose for candidate
                     auto cand_goal = std::make_shared<geometry_msgs::msg::Pose>();
                     cand_goal->position.x = cand.x; 
                     cand_goal->position.y = cand.y; 
                     cand_goal->orientation.w = 1.0;
 
+                    // Go to candidate
                     navigator.GoToPose(cand_goal);
+                    // verify
                     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
                     navigator.Spin(); 
                     while (rclcpp::ok() && !navigator.IsTaskComplete()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
@@ -467,8 +530,10 @@ int main(int argc, char **argv) {
 
             std::cout << "[Main] Navigating to WP " << wp_count << "/" << waypoints.size() << "..." << std::flush;
             auto goal = std::make_shared<geometry_msgs::msg::Pose>(wp.pose);
+            // continue searching for humans at waypoints
             navigator.GoToPose(goal);
-            
+
+            // wait for waypoint to be reached
             while (rclcpp::ok() && !navigator.IsTaskComplete()) { 
                 Candidate mid_cand = detector->getBestNewCandidate();
                 if (mid_cand.x != 0.0) {
@@ -496,7 +561,7 @@ int main(int argc, char **argv) {
     int minutes = total_seconds / 60;
     int seconds = total_seconds % 60;
 
-    // [FIX] Report findings using status variables from main
+    // print final report
     detector->reportFindings(h1_found, h2_found, verified_locations);
     std::cout << "[Main] Mission Completed in " << minutes << " min " << seconds << " sec." << std::endl;
 
