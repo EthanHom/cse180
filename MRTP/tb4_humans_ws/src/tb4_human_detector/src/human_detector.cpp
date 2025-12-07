@@ -24,17 +24,6 @@ FOR DOCKER on Mac
 */
 
 
-// =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v17 (Logic & Bounds Fix)
-// 
-// Fixes applied to User's Code:
-// 1. "Still at Original" Fix: Counters are now reset AFTER arriving at the check-point.
-//    This prevents false positives from objects seen while driving.
-// 2. "(14,-24) Not Found" Fix: Bounds expanded to +/- 14.5 and +/- 24.5.
-//    This includes the corner human but excludes the walls (ghosts) at 24.6+.
-// 3. Reporting Logic: Passes boolean status to reportFindings to ensure consistency.
-// =============================================================================================
-
 #include <memory>
 #include <vector>
 #include <cmath>
