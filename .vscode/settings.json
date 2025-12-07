@@ -50,6 +50,7 @@
         "print": "cpp",
         "queue": "cpp",
         "sstream": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "chrono": "cpp"
     }
 }
