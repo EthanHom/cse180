@@ -1,55 +1,3 @@
-Directions: 
-    Important: The final project may be completed individually or in teams of up to three students (no exceptions). Team registration is available under the “Announcements” section.
-
-    If you choose to work individually, no registration is required. Any student not listed on a team will automatically be considered to be working alone.
-
-    All teams must be registered by December 5.
-
-    Project presentations will take place during the last week of classes.
-
-    Individual projects: Present during your assigned lab section.
-
-    Team projects: Present in any of the lab sections assigned to your team (no exceptions).
-
-    =============================================================================================
-
-    First, make sure to get the latest version of the MRTP repository, because the files for the final project have just been added. After having rebuilt the MRTP workspace, you can launch the simulation environment as follows: 
-
-    ros2 launch gazeboenvs tb4_warehouse.launch.py
-    If you want to run both gazebo and rviz (useful for debugging), use the following command:
-
-    ros2 launch gazeboenvs tb4_warehouse.launch.py use_rviz:=true
-    Note that the robot starts with pose x=2.12, y=-21.3 and yaw = 1.57 (radians). The localization algorithm is initialized with these values.
-
-    As you can see from Gazebo and Rviz, the robot is operating in a warehouse environment in which there are two stationary human characters. The footprint of the humans is included in the map loaded in gazebo, and available to the robot through the /map topic. Your task is to write a controller for the robot to determine
-
-    if the humans have move to a different location;
-    in case they have moved, determine where they are. Note that if the characters have moved, the will be permanently relocated at a different position, but they will not keep moving.
-    To solve this problem you should:
-
-    use the navigation library provided in class to move the robot in the environment using the nav2 stack
-    retrieve the map of the environment from /map
-    use the range finder on top of the robot to check if the environment have changed (e.g., if the humans have moved).
-    use the topic amcl_pose to retrieve the position of the robot in the environment
-    Deliverables:
-
-    zipped file with code (included in a self contained workspace); to be uploaded to catcourses;
-    one pager description of the solution (pdf); to be uploaded to catcourses;
-    presentation with demo to be given during lab hours.
-    
-
-    Q&A:
-
-    Q: What does it mean that I have to submit a fully contained file?
-    A: It means that the zipped file you submit must have a workspace, and inside the workspace it must have all code you developed (located in a suitable package). If your code relies on additional ros2 standard packages (i.e., packages that can be installed with atp install) you should list them. If the packages are not standard (e.g., downloaded from github), please include them in your submission. 
-    Q: How can I alter the position of the characters to test if my solution works?
-    A: Start the simulation environment in Gazebo and identify the character you intend to move. Click on it with the mouse to select it. A white parallelepiped will appear around the character, indicating that it has been selected. In the upper right corner of the screen, open the “Pose” menu. From there, you can modify the character’s x, y, and z coordinates, as well as its roll, pitch, and yaw. Please note that changes take effect only after you press the Tab key or select a different item in the menu.
-    Q: I want to know that if our entire group must be present during the demo and presentation. We all have different sections that conflict with other classes so we would have to forego one of our other responsibilities to make it to any of the other lab sections.
-    A: It is not necessary for the entire team to be present during the demo and presentation. One (or two) of you can make the presentation during any of the lab sections you registered for.
-    Q: What is the format of the presentation?
-    A: You build and run the code in front of the TA and describe how you solved the problem, answering any question the TA may have. The presentation is not in front of the class and you do not have to present slides.
-
-
 Terminal Results for my test cases (mac and pc are both using docker, im just specifying which machine is which):
     Human 1 and 2 not moved:
         pc:
@@ -3257,7 +3205,4 @@ Terminal Results for my test cases (mac and pc are both using docker, im just sp
 
             [Main] Mission Completed in 37 min 49 sec.
 
-            
 
-
- 
