@@ -507,13 +507,12 @@ ros2 run tb4_human_detector human_detector_node
 
 
 // =============================================================================================
-// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v15 (Precision Bounds Fix)
+// MRTP FINAL PROJECT: ROBUST HUMAN DETECTOR v16 (Final Polish)
 // 
 // Updates:
-// 1. Bounds Tightened: X [+/- 14.2], Y [+/- 24.2].
-//    - Keeps human at (14, -24).
-//    - Rejects wall ghost at (..., 24.6).
-// 2. Wall Buffer: Increased to 18 cells to handle drift near walls better.
+// 1. Bounds: Tightened to +/- 14.0 (X) and +/- 24.0 (Y) to hard-stop wall detections.
+// 2. Wall Buffer: Increased to 18 cells (~54cm) to ignore drift near static obstacles.
+// 3. Threshold: Increased to 50 hits for higher confidence verification.
 // =============================================================================================
 
 #include <memory>
@@ -576,7 +575,7 @@ public:
             "/amcl_pose", 10,
             std::bind(&HumanDetector::amclCallback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Human Detector Ready.");
+        RCLCPP_INFO(this->get_logger(), "Final Human Detector Ready.");
     }
 
     bool hasMap() const { return have_map_.load(); }
@@ -602,7 +601,8 @@ public:
         
         std::vector<DetectionCluster> candidates;
         for (const auto& [coord, count] : dynamic_obstacles_) {
-            if (count < 40) continue; 
+            // [FIX] Increased Threshold: 50 hits for solid confirmation
+            if (count < 50) continue; 
             
             double wx = coord.first / 10.0; 
             double wy = coord.second / 10.0;
@@ -610,9 +610,9 @@ public:
             if (std::hypot(wx - H1_X, wy - H1_Y) < 2.0) continue;
             if (std::hypot(wx - H2_X, wy - H2_Y) < 2.0) continue;
             
-            // [FIX] Tightened bounds to +/- 14.2 and +/- 24.2
-            // Keeps (14, -24) but rejects (..., 24.6)
-            if (wx < -14.2 || wx > 14.2 || wy < -24.2 || wy > 24.2) continue;
+            // [FIX] Precision Bounds: +/- 14.0 and +/- 24.0
+            // This rejects the wall at 24.1 but keeps valid warehouse space.
+            if (wx < -14.0 || wx > 14.0 || wy < -24.0 || wy > 24.0) continue;
 
             candidates.push_back({wx, wy, count});
         }
@@ -813,7 +813,7 @@ private:
             int gx = static_cast<int>((wx - map_.info.origin.position.x) / map_.info.resolution);
             int gy = static_cast<int>((wy - map_.info.origin.position.y) / map_.info.resolution);
             
-            // [FIX] Increased wall buffer to 18 cells (~54cm) to handle drift better
+            // [FIX] Increased wall buffer to 18 cells (~54cm) to reject wall drift.
             int check_rad = 18; 
             for(int dy=-check_rad; dy<=check_rad && !wall_nearby; ++dy) {
                 for(int dx=-check_rad; dx<=check_rad && !wall_nearby; ++dx) {

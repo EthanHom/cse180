@@ -100,66 +100,223 @@ Where Humans are located when not moved:
 
 Terminal Results For my test cases:
     Human 1 and 2 not moved:
-        mac: 
+        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# colcon build
+        Starting >>> tb4_human_detector
+        Finished <<< tb4_human_detector [0.48s]                  
 
-        pc:
+        Summary: 1 package finished [0.56s]
+        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+        [INFO] [1765064233.058706636] [tb4_human_detector]: Final Human Detector Ready.
+        [INFO] [1765064233.125674511] [navigator]: Created instance of Navigator
+
+        [Main] Waiting for Map...
+        [WARN] [1765064233.126269595] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+        [Main] Map Received.
+        [INFO] [1765064233.428158970] [navigator]: Inside SetInitialPose
+        [INFO] [1765064233.428261011] [navigator]: Waiting for Nav2 to activate...
+        [INFO] [1765064233.428270303] [navigator]: Waiting for amcl
+        [INFO] [1765064233.432594136] [navigator]: amcl active
+        [INFO] [1765064233.434147345] [navigator]: acml is ready
+        [INFO] [1765064233.434338803] [navigator]: Waiting for initial pose
+        [INFO] [1765064233.499969761] [navigator]: initial pose is received
+        [INFO] [1765064233.500076303] [navigator]: Waiting for bt_navigator
+        [INFO] [1765064233.503230095] [navigator]: bt_navigator active
+        [INFO] [1765064233.505229678] [navigator]: bt_navigator is ready
+        [INFO] [1765064233.505552678] [navigator]: Nav2 is ready!
+
+        [Main] Phase 1: Checking original locations...
+        [INFO] [1765064233.505652345] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064233.506841345] [navigator]: GoToPose request was accepted
+        [INFO] [1765064281.000455964] [navigator]: Task Go to Pose got result
+        [ERROR] [1765064281.000554839] [navigator]: Goal was achieved
+        [INFO] [1765064281.000635339] [navigator]: Waiting for Spin action server
+        [INFO] [1765064281.005729214] [navigator]: In task Spin response callback
+        [INFO] [1765064281.005804422] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765064281.006012880] [navigator]: Spin request was accepted
+        [INFO] [1765064283.106831215] [navigator]: Task Spin got result
+        [ERROR] [1765064283.106860215] [navigator]: Goal was achieved
+        [INFO] [1765064283.106907256] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064283.107902798] [navigator]: GoToPose request was accepted
+        [INFO] [1765064418.197020055] [navigator]: Task Go to Pose got result
+        [ERROR] [1765064418.197107222] [navigator]: Goal was achieved
+        [INFO] [1765064418.197227722] [navigator]: Waiting for Spin action server
+        [INFO] [1765064418.198647805] [navigator]: In task Spin response callback
+        [INFO] [1765064418.199744097] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765064418.199838722] [navigator]: Spin request was accepted
+        [INFO] [1765064420.018647584] [navigator]: Task Spin got result
+        [ERROR] [1765064420.018683792] [navigator]: Goal was achieved
+        [Main] Status: H1@Start, H2@Start
+        [Main] SUCCESS: Both humans found at original locations!
+
+        ========================================
+            HUMAN DETECTION REPORT
+        ========================================
+        [Human 1] STILL AT ORIGINAL (1, -1) [DETECTED]
+        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
+        ========================================
+
+        [Main] Mission Completed in 3 min 6 sec.
 
     Human 1 at (5,3):
-        mac: 
+        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+        [INFO] [1765064507.102082680] [tb4_human_detector]: Final Human Detector Ready.
+        [INFO] [1765064507.199232221] [navigator]: Created instance of Navigator
 
-        pc:
+        [Main] Waiting for Map...
+        [WARN] [1765064507.199842638] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+        [Main] Map Received.
+        [INFO] [1765064507.502737513] [navigator]: Inside SetInitialPose
+        [INFO] [1765064507.502994305] [navigator]: Waiting for Nav2 to activate...
+        [INFO] [1765064507.503009180] [navigator]: Waiting for amcl
+        [INFO] [1765064507.508053347] [navigator]: amcl active
+        [INFO] [1765064507.510688222] [navigator]: acml is ready
+        [INFO] [1765064507.510710388] [navigator]: Waiting for initial pose
+        [INFO] [1765064507.564289513] [navigator]: initial pose is received
+        [INFO] [1765064507.564323597] [navigator]: Waiting for bt_navigator
+        [INFO] [1765064507.567425513] [navigator]: bt_navigator active
+        [INFO] [1765064507.569882222] [navigator]: bt_navigator is ready
+        [INFO] [1765064507.569966930] [navigator]: Nav2 is ready!
+
+        [Main] Phase 1: Checking original locations...
+        [INFO] [1765064507.569987847] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064507.601391638] [navigator]: GoToPose request was accepted
+        [INFO] [1765064554.715399007] [navigator]: Task Go to Pose got result
+        [ERROR] [1765064554.715436924] [navigator]: Goal was achieved
+        [INFO] [1765064554.715494716] [navigator]: Waiting for Spin action server
+        [INFO] [1765064554.716334174] [navigator]: In task Spin response callback
+        [INFO] [1765064554.716355382] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765064554.716426632] [navigator]: Spin request was accepted
+        [INFO] [1765064556.819594217] [navigator]: Task Spin got result
+        [ERROR] [1765064556.819627258] [navigator]: Goal was achieved
+        [INFO] [1765064556.819685967] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064556.820629217] [navigator]: GoToPose request was accepted
+        [INFO] [1765064691.185843584] [navigator]: Task Go to Pose got result
+        [ERROR] [1765064691.185885001] [navigator]: Goal was achieved
+        [INFO] [1765064691.188034417] [navigator]: Waiting for Spin action server
+        [INFO] [1765064691.190255084] [navigator]: In task Spin response callback
+        [INFO] [1765064691.190276834] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765064691.190318667] [navigator]: Spin request was accepted
+        [INFO] [1765064693.091812543] [navigator]: Task Spin got result
+        [ERROR] [1765064693.091855293] [navigator]: Goal was achieved
+        [Main] Status: H1@Moved, H2@Start
+        [Main] WARNING: Need to find 1 more human(s). Starting Search...
+
+        [Main] INTERRUPT: Investigating candidate at (4.9, 2.9)...
+        [INFO] [1765064693.092156710] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064693.093484585] [navigator]: GoToPose request was accepted
+        [INFO] [1765064825.066413382] [navigator]: Task Go to Pose got result
+        [ERROR] [1765064825.066507799] [navigator]: Goal was achieved
+        [INFO] [1765064825.066620091] [navigator]: Waiting for Spin action server
+        [INFO] [1765064825.068983424] [navigator]: In task Spin response callback
+        [INFO] [1765064825.069066341] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765064825.069132841] [navigator]: Spin request was accepted
+        [INFO] [1765064825.770039508] [navigator]: Task Spin got result
+        [ERROR] [1765064825.770076674] [navigator]: Goal was aborted
+        [Main] CONFIRMED HUMAN FOUND!
+
+        ========================================
+            HUMAN DETECTION REPORT
+        ========================================
+        [Human 1] MOVED from (1, -1)
+                NEW LOCATION: (4.9, 2.9)
+        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
+        ========================================
+
+        [Main] Mission Completed in 5 min 18 sec.
 
     Human 1 at (10,12):
-        pc: 
+        (.venv) root@docker-desktop:/MRTP/tb4_humans_ws# ros2 run tb4_human_detector human_detector_node 
+        [INFO] [1765064970.792577880] [tb4_human_detector]: Final Human Detector Ready.
+        [INFO] [1765064970.828973880] [navigator]: Created instance of Navigator
+
+        [Main] Waiting for Map...
+        [WARN] [1765064970.829314422] [tf2_buffer]: Detected time source change. Clearing TF buffer.
+        [Main] Map Received.
+        [INFO] [1765064972.445647173] [navigator]: Inside SetInitialPose
+        [INFO] [1765064972.446039839] [navigator]: Waiting for Nav2 to activate...
+        [INFO] [1765064972.446060464] [navigator]: Waiting for amcl
+        [INFO] [1765064972.450484006] [navigator]: amcl active
+        [INFO] [1765064972.451019256] [navigator]: acml is ready
+        [INFO] [1765064972.451030464] [navigator]: Waiting for initial pose
+        [INFO] [1765064972.461287381] [navigator]: initial pose is received
+        [INFO] [1765064972.461325048] [navigator]: Waiting for bt_navigator
+        [INFO] [1765064972.466383673] [navigator]: bt_navigator active
+        [INFO] [1765064972.469252756] [navigator]: bt_navigator is ready
+        [INFO] [1765064972.469857006] [navigator]: Nav2 is ready!
+
+        [Main] Phase 1: Checking original locations...
+        [INFO] [1765064972.469876548] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765064972.651503423] [navigator]: GoToPose request was accepted
+        [INFO] [1765065019.512926458] [navigator]: Task Go to Pose got result
+        [ERROR] [1765065019.512961083] [navigator]: Goal was achieved
+        [INFO] [1765065019.513085917] [navigator]: Waiting for Spin action server
+        [INFO] [1765065019.513711167] [navigator]: In task Spin response callback
+        [INFO] [1765065019.513726083] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765065019.513941292] [navigator]: Spin request was accepted
+        [INFO] [1765065021.614588293] [navigator]: Task Spin got result
+        [ERROR] [1765065021.614633543] [navigator]: Goal was achieved
+        [INFO] [1765065021.614714876] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765065021.615605418] [navigator]: GoToPose request was accepted
+        [INFO] [1765065160.338445968] [navigator]: Task Go to Pose got result
+        [ERROR] [1765065160.338563135] [navigator]: Goal was achieved
+        [INFO] [1765065160.338686968] [navigator]: Waiting for Spin action server
+        [INFO] [1765065160.340797551] [navigator]: In task Spin response callback
+        [INFO] [1765065160.340824260] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765065160.340874676] [navigator]: Spin request was accepted
+        [INFO] [1765065162.161880344] [navigator]: Task Spin got result
+        [ERROR] [1765065162.161914802] [navigator]: Goal was achieved
+        [Main] Status: H1@Moved, H2@Start
+        [Main] WARNING: Need to find 1 more human(s). Starting Search...
+
+        [Main] INTERRUPT: Investigating candidate at (9.9, 12)...
+        [INFO] [1765065162.162341219] [navigator]: Waiting for NavigateToGoal action server
+        [INFO] [1765065162.163910969] [navigator]: GoToPose request was accepted
+        [INFO] [1765065313.378934720] [navigator]: Task Go to Pose got result
+        [ERROR] [1765065313.379045428] [navigator]: Goal was achieved
+        [INFO] [1765065313.379171845] [navigator]: Waiting for Spin action server
+        [INFO] [1765065313.380961970] [navigator]: In task Spin response callback
+        [INFO] [1765065313.380976928] [navigator]: Goal accepted by server, waiting for result
+        [INFO] [1765065313.381040678] [navigator]: Spin request was accepted
+        [INFO] [1765065314.591036637] [navigator]: Task Spin got result
+        [ERROR] [1765065314.591070762] [navigator]: Goal was aborted
+        [Main] CONFIRMED HUMAN FOUND!
+
+        ========================================
+            HUMAN DETECTION REPORT
+        ========================================
+        [Human 1] MOVED from (1, -1)
+                NEW LOCATION: (9.9, 12)
+        [Human 2] STILL AT ORIGINAL (-12, 15) [DETECTED]
+        ========================================
+
+        [Main] Mission Completed in 5 min 43 sec.
 
     Human 1 at (-4,-10):
-        pc (linux):
-            here
-
-        mac: 
 
     Human 2 at (12,11):
-        pc (linux): 
 
-        mac:
-        
     Human 1 at (-7, 12):
-        pc (linux):
-
-        mac:
 
     Human 2 at (-12, 2):
-        pc (linux):
-
-        mac: 
             
-
     Human 1 at (-12, -23):
-        mac: 
 
     Human 2 at (12,0):
-        mac: 
 
     Human 2 at (-12,0):
-        pc (linux): 
-
+        
     Human 1 at (12,-12): 
-        mac:
-
+        
     Human 2 at (13,-18):
-        mac:
-
+        
     Human 1 at (14,-24):
-        pc (linux):
-
+        
     Human 2 at (-13,9):
-        mac:
-
+        
     Human 1 at (-13,9):
-        mac: now  
-
+        
     Human 1 at (2,-12), Human 2 at (-6,14):
-
+        
 
 
  Code that worked but had issues with sometimes thinking human 1 was at original location when it wasnt. but when it didnt detect human 1 at original location, 100% found the new location:
