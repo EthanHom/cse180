@@ -1,7 +1,7 @@
 // run the project in terminal: 
 /* 
 
-FOR DOCKER on Mac
+FOR DOCKER
 
     Terminal 1:
         make vnc
@@ -137,7 +137,7 @@ public:
             
             // if (wx < -14.5 || wx > 14.5 || wy < -24.5 || wy > 24.5) continue;  // prone to false positives
             // if (wx < -14 || wx > 14 || wy < -24 || wy > 24) continue;    // doesn't get humans close to wall
-            if (wx < -14.25 || wx > 14.25 || wy < -24.25 || wy > 24.25) continue;   // good boundary
+            if (wx < -14.25 || wx > 14.25 || wy < -24.25 || wy > 24.25) continue;   // between that works
 
             candidates.push_back({wx, wy, count});
         }
